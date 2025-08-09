@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import de.tr7zw.nbtapi.NBTItem;
 
@@ -53,6 +54,7 @@ public class SpellType {
 		lore.add("§fLevel: §e" + level);
 
 		meta.setLore(lore);
+		meta.getPersistentDataContainer().set(new NamespacedKey(FancyMagic.plugin, "scroll"), PersistentDataType.INTEGER, 1);
 
 		result.setItemMeta(meta);
 		

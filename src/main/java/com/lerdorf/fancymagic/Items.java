@@ -47,6 +47,7 @@ public class Items {
 		ItemMeta meta = result.getItemMeta();
 		meta.setItemModel(NamespacedKey.fromString("fsp:"+base.x.toLowerCase() + "_" + core.b.toLowerCase() + "_" + shape.x.toLowerCase()));
 		meta.setDisplayName("§d§l" + core.b + " " + shape.x);
+		meta.getPersistentDataContainer().set(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER, 1);
 		
 		List<String> lore = new ArrayList<>();
 		lore.add("§bBase: §f" + base.x + "§r");

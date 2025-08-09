@@ -6,7 +6,9 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -31,7 +33,9 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -45,9 +49,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
+import org.checkerframework.checker.units.qual.C;
 import org.joml.Quaternionf;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+
+import de.tr7zw.nbtapi.NBTItem;
 
 import org.joml.Vector3f;
 import org.joml.AxisAngle4f;
@@ -158,15 +165,6 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 		event.getPlayer().discoverRecipes(recipes);
 	}
 
-	public boolean rightClick(Player p, Block block) {
-		if (p.isSneaking()) {
-			// return false;
-		} else {
-
-		}
-		return false;
-	}
-
     private void registerRecipes() {
     	
     	NamespacedKey key = new NamespacedKey(this, "spellbook");
@@ -188,20 +186,73 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         
     }
     
-    public boolean rightClick(Player player) {
+    public HashMap<UUID, List<Boolean>> clicks = new HashMap<>();
+    
+    public boolean rightClick(Player player, boolean rightClick) {
     	
+    	ItemStack item = player.getEquipment().getItemInMainHand();
+    	if (item != null) {
+    		ItemMeta meta = item.getItemMeta();
+    		if (meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
+    			if (!clicks.containsKey(player.getUniqueId())) {
+    				clicks.put(player.getUniqueId(), new ArrayList<>());
+    				new BukkitRunnable() {
+    					int c = 0;
+						@Override
+						public void run() {
+							if (c > 20)
+							{
+								if (clicks.containsKey(player.getUniqueId()))
+									clicks.remove(player.getUniqueId());
+								cancel();
+								return;
+							}
+							c++;
+						}
+    					
+    				}.runTaskTimer(plugin, 0L, 1L);	
+    			}
+				clicks.get(player.getUniqueId()).add(rightClick);
+    		}
+    	}
+    	
+    	return false;
+    }
+    
+    public void selectSpell(Player player) {
+    	ItemStack item = player.getEquipment().getItemInMainHand();
+    	if (item != null) {
+    		ItemMeta meta = item.getItemMeta();
+    		if (meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
+    			NBTItem nbt = new NBTItem(item);
+    			float rangeMod = nbt.getFloat("Range");
+    			float cooldownMod = nbt.getFloat("Cooldown");
+    			float potencyMod = nbt.getFloat("Potency");
+    		}
+    	}
     }
     
     @EventHandler
     public void playerInteractEvent(PlayerInteractEvent event) {
-    	boolean cancelEvent = rightClick(event.getPlayer());
-    	if (cancelEvent)
-    		event.setCancelled(true);
+    	boolean rightClick = false;
+    	boolean click = false;
+    	if (event.getAction() == Action.LEFT_CLICK_AIR|| event.getAction() == Action.LEFT_CLICK_BLOCK) {
+    		rightClick = false;
+    		click = true;
+    	} else if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+    		rightClick = true;
+    		click = true;
+    	}
+    	if (click) {
+	    	boolean cancelEvent = rightClick(event.getPlayer(), rightClick);
+	    	if (cancelEvent)
+	    		event.setCancelled(true);
+    	}
     }
     
     @EventHandler
     public void playerInteractEntityEvent(PlayerInteractEntityEvent event) {
-    	boolean cancelEvent = rightClick(event.getPlayer());
+    	boolean cancelEvent = rightClick(event.getPlayer(), true);
     	if (cancelEvent)
     		event.setCancelled(true);
     	
@@ -209,11 +260,21 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     
     @EventHandler
     public void blockPlaceEvent(BlockPlaceEvent event) {
-    	boolean cancelEvent = rightClick(event.getPlayer());
+    	boolean cancelEvent = rightClick(event.getPlayer(), true);
     	if (cancelEvent)
     		event.setCancelled(true);
     	
     }
+    
+    @EventHandler
+    public void entityDamageByEntity(EntityDamageByEntityEvent event) {
+    	if (event.getDamager() instanceof Player p) {
+	    	boolean cancelEvent = rightClick(p, false);
+	    	if (cancelEvent)
+	    		event.setCancelled(true);
+    	}
+    }
+    
     
     @Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
