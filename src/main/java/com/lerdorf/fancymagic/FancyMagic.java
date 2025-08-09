@@ -31,6 +31,8 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -184,6 +186,33 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         for (SpellType spellType : Spell.spellTypes)
         	spellType.addRecipe();
         
+    }
+    
+    public boolean rightClick(Player player) {
+    	
+    }
+    
+    @EventHandler
+    public void playerInteractEvent(PlayerInteractEvent event) {
+    	boolean cancelEvent = rightClick(event.getPlayer());
+    	if (cancelEvent)
+    		event.setCancelled(true);
+    }
+    
+    @EventHandler
+    public void playerInteractEntityEvent(PlayerInteractEntityEvent event) {
+    	boolean cancelEvent = rightClick(event.getPlayer());
+    	if (cancelEvent)
+    		event.setCancelled(true);
+    	
+    }
+    
+    @EventHandler
+    public void blockPlaceEvent(BlockPlaceEvent event) {
+    	boolean cancelEvent = rightClick(event.getPlayer());
+    	if (cancelEvent)
+    		event.setCancelled(true);
+    	
     }
     
     @Override
