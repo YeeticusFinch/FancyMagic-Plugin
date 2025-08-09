@@ -1,0 +1,9 @@
+name: FancyMagic
+main: com.lerdorf.fancymagic.FancyMagic
+version: 1.0
+api-version: 1.21
+commands:
+  magic:
+    description: Get a spell scroll
+    usage: /<command> <spell name>
+    permission: fancymagic.magic
