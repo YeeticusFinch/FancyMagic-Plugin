@@ -13,11 +13,14 @@ import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import de.tr7zw.nbtapi.NBTItem;
+import net.kyori.adventure.text.Component;
+import net.md_5.bungee.api.ChatColor;
 
 public class Items {
 	
@@ -28,7 +31,7 @@ public class Items {
 		meta.getPersistentDataContainer().set(new NamespacedKey(FancyMagic.plugin, "scroll"), PersistentDataType.INTEGER, 1);
 		setItemMeta(meta);
 	}};
-	public static final ItemStack SPELLBOOK = new ItemStack(Material.BOOK) {{
+	public static final ItemStack SPELLBOOK = new ItemStack(Material.WRITTEN_BOOK) {{
 		ItemMeta meta = getItemMeta();
 		meta.setDisplayName("§d§lSpellbook");
 		meta.setItemModel(NamespacedKey.fromString("fsp:spellbook"));
@@ -36,7 +39,94 @@ public class Items {
 		setItemMeta(meta);
 	}};
 	
-	public static final ItemStack getFocus(Triple<String, Integer, Float> base, Quadruple<String, String, Float, Float> core, Triple<String, Float, Float> shape) {
+	//Items.java
+	public static void addSpell(ItemStack spellbook, String spellName, int spellLevel) {
+		if (spellbook != null) {
+			BookMeta bmeta = (BookMeta) spellbook.getItemMeta();
+			if (bmeta != null) {
+				Spell[] spells = getSpells(spellbook); // get all the spells in the spellbook
+				
+				SpellType spell = Spell.getSpellType(spellName); // get the spelltype object for the spell being added
+				
+				Spell existingSpell = null; // the existing spell in this book (if this book has this same spell already)
+				int levelProgress = 0;
+				int existingLevel = 0;
+				for (Spell s : spells) {
+					if (s.data.name.equalsIgnoreCase(spell.name)) {
+						existingSpell = s;
+						levelProgress = existingSpell.partialLevel;
+						existingLevel = existingSpell.level;
+						break;
+					}
+				}
+
+				int resultingLevel = spellLevel;
+				if (spellLevel < existingLevel) {
+					resultingLevel = existingLevel;
+					levelProgress += spellLevel;
+				} 
+				else if (spellLevel > existingLevel) {
+					resultingLevel = spellLevel;
+					levelProgress += existingLevel;
+				}
+				if (levelProgress >= resultingLevel) {
+					levelProgress -= resultingLevel;
+					resultingLevel++;
+				}
+
+				String requirements = ""; // Spell requirements for the spell that is being added
+				if  (spell.hotbarRequirements != null && spell.hotbarRequirements.length > 0) {
+					for (Material mat : spell.hotbarRequirements) {
+						requirements += mat.toString() + " (hotbar)";
+					}
+				}
+				if  (spell.inventoryRequirements != null && spell.inventoryRequirements.length > 0) {
+					for (Material mat : spell.inventoryRequirements) {
+						requirements += mat.toString() + " (inventory)";
+					}
+				}
+				if (requirements.length() > 0)
+					requirements += "\n";
+				
+				bmeta.addPage(
+						ChatColor.UNDERLINE + "" + ChatColor.BOLD + ChatColor.LIGHT_PURPLE + spellName + "\n"
+						+ ChatColor.RESET + ChatColor.WHITE + "Level: " + ChatColor.AQUA + resultingLevel + " " + (levelProgress > 0 ? (ChatColor.GRAY + "- " + levelProgress + "/" + resultingLevel) : "") + "\n" 
+						+ ChatColor.RESET + requirements
+						+ ChatColor.RESET + ChatColor.ITALIC + ChatColor.WHITE + spell.description);
+				
+				spellbook.setItemMeta(bmeta);
+			}
+		}
+	}
+	
+	public static Spell[] getSpells(ItemStack spellbook) {
+		if (spellbook != null) {
+			BookMeta bmeta = (BookMeta) spellbook.getItemMeta();
+			if (bmeta != null) {
+				Spell[] spells = new Spell[bmeta.getPageCount()];
+				int i = 0;
+				for (String page : bmeta.getPages()) {
+					page = ChatColor.stripColor(page);
+					String spellName = page.substring(0, page.indexOf('\n'));
+					page = page.substring(page.indexOf('\n')+1);
+					int level = Integer.parseInt(page.substring(page.indexOf("Level: ")+7, page.indexOf(' ', page.indexOf("Level: ")+7)));
+					page = page.substring(page.indexOf(level+"") + (level+"").length(), page.indexOf('\n'));
+					int partialLevel = 0;
+					if (page.length() > 2) {
+						// We have a partial level
+						partialLevel = Integer.parseInt(page.substring(page.indexOf('-')+2, page.indexOf('/')));
+					}
+					spells[i] = new Spell(Spell.getSpellType(spellName), level, partialLevel);
+					i++;
+				}
+				return spells;
+			}
+			return null;
+		}
+		return null;
+	}
+	
+	public static ItemStack getFocus(Triple<String, Integer, Float> base, Quadruple<String, String, Float, Float> core, Triple<String, Float, Float> shape) {
 
 		int durability = (int)(base.y * core.c);
 		float rangeMod = shape.y;

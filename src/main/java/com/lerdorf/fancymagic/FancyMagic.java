@@ -36,12 +36,15 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
@@ -126,6 +129,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 			e.printStackTrace();
 		}
 	}
+	public SpellBookMenu sbMenu;
 
 	public static Collection<NamespacedKey> recipes = new ArrayList<>();
 	
@@ -142,6 +146,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 		saveConfig();
 		
 		registerRecipes();
+		sbMenu = new SpellBookMenu(this);
 
 		/*
 		 * new BukkitRunnable() {
@@ -186,7 +191,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         
     }
     
-    public HashMap<UUID, List<Boolean>> clicks = new HashMap<>();
+    public HashMap<Player, List<Boolean>> clicks = new HashMap<>();
     
     public boolean rightClick(Player player, boolean rightClick) {
     	
@@ -194,32 +199,31 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     	if (item != null) {
     		ItemMeta meta = item.getItemMeta();
     		if (meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
-    			if (!clicks.containsKey(player.getUniqueId())) {
-    				clicks.put(player.getUniqueId(), new ArrayList<>());
-    				new BukkitRunnable() {
-    					int c = 0;
-						@Override
-						public void run() {
-							if (c > 20)
-							{
-								if (clicks.containsKey(player.getUniqueId()))
-									clicks.remove(player.getUniqueId());
-								cancel();
-								return;
-							}
-							c++;
-						}
-    					
-    				}.runTaskTimer(plugin, 0L, 1L);	
+    			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
+	    			if (!clicks.containsKey(player.getUniqueId())) {
+	    				clicks.put(player, new ArrayList<>());
+	    				Bukkit.getScheduler().runTaskLater(plugin, () -> {
+	    					if (clicks.containsKey(player.getUniqueId()))
+								clicks.remove(player.getUniqueId());
+						}, 20);
+	    			}
+					String bar = "";
+					for (boolean b : clicks.get(player))
+						bar += b ? "R " : "L ";
+					bar += rightClick ? "R" : "L";
+					clicks.get(player).add(rightClick);
+					player.sendActionBar(ChatColor.AQUA + bar);
+    			} else {
+    				player.sendMessage(ChatColor.YELLOW + "Warning: Are you trying to cast a spell? You must have your spellbook in your offhand.");
+    				return false;
     			}
-				clicks.get(player.getUniqueId()).add(rightClick);
     		}
     	}
     	
     	return false;
     }
     
-    public void selectSpell(Player player) {
+    public void castSpell(Player player) {
     	ItemStack item = player.getEquipment().getItemInMainHand();
     	if (item != null) {
     		ItemMeta meta = item.getItemMeta();
@@ -273,6 +277,61 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 	    	if (cancelEvent)
 	    		event.setCancelled(true);
     	}
+    }
+    
+    @EventHandler
+    public void onPrepareCraft(PrepareItemCraftEvent event) {
+    	//ItemStack result = event.getRecipe().getResult();
+    	ItemStack result = event.getInventory().getResult();
+    	if (result != null && result.getType() == Material.BOOK) {
+	    	// get the items being used for the craft
+	    	CraftingInventory inv = event.getInventory();
+	
+	        // All items in the crafting grid (includes null/air slots)
+	        ItemStack[] matrix = inv.getMatrix();
+	        List<ItemStack> scrolls = new ArrayList<ItemStack>();
+	
+	        for (int i = 0; i < matrix.length; i++) {
+	            ItemStack item = matrix[i];
+	            if (item != null && item.getType() == Material.PAPER && item.getItemMeta().getItemModel().getNamespace().equals("fsp:scroll")) {
+	            	scrolls.add(item);
+	            }
+	        }
+	        if (scrolls.size() > 0) {
+	        	result = Items.SPELLBOOK.clone();
+	        	BookMeta bmeta = (BookMeta) result.getItemMeta();
+	        	Player player = ((Player)event.getView().getPlayer());
+	        	bmeta.setAuthor(player.getName());
+	        	bmeta.setTitle("Spellbook");
+	        	result.setItemMeta(bmeta);
+	        	for (ItemStack item : scrolls) {
+		        	NBTItem nbt = new NBTItem(item);
+	        		String spellName = nbt.getString("Spell");
+	        		byte spellLevel = nbt.getByte("Level");
+	        		Items.addSpell(result, spellName, spellLevel);
+	        	}
+	        	//result.setItemMeta(bmeta);
+	        	inv.setResult(result);
+	        }
+    	}
+    }
+    
+    public static String toRoman(int number) {
+        if (number <= 0 || number > 3999) throw new IllegalArgumentException("Number out of range (1-3999)");
+
+        int[] values =    {1000, 900, 500, 400, 100,  90,  50,  40,  10,   9,   5,   4,   1};
+        String[] numerals = {"M", "CM","D", "CD","C","XC","L","XL","X","IX","V","IV","I"};
+
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < values.length; i++) {
+            while (number >= values[i]) {
+                number -= values[i];
+                result.append(numerals[i]);
+            }
+        }
+
+        return result.toString();
     }
     
     

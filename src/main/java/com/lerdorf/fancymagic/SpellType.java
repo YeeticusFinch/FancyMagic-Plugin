@@ -26,14 +26,16 @@ public class SpellType {
 	public int cost;
 	Material[] hotbarRequirements;
 	Material[] inventoryRequirements;
+	public String description;
 	
-	public SpellType(String name, String[] crafting, Map<Character, Material> ingredients, int cost, Material[] hotbarRequirements, Material[] inventoryRequirements) {
+	public SpellType(String name, String[] crafting, Map<Character, Material> ingredients, int cost, Material[] hotbarRequirements, Material[] inventoryRequirements, String description) {
 		this.name = name;
 		this.crafting = crafting;
 		this.ingredients = ingredients;
 		this.cost = cost;
 		this.hotbarRequirements = hotbarRequirements;
 		this.inventoryRequirements = inventoryRequirements;
+		this.description = description;
 		Spell.spellTypes.add(this);
 	}
 	
