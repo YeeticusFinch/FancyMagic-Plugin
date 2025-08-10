@@ -490,4 +490,23 @@ public class Spell {
 		return null;
 	}
 	
+    public static String getClickCombination(int index, int totalSpells) {
+        if (totalSpells <= 2) return (index == 0) ? "L" : "R";
+        if (totalSpells < 4) {
+            return switch (index) {
+                case 0 -> "LL";
+                case 1 -> "LR";
+                case 2 -> "RL";
+                default -> "RR";
+            };
+        }
+        StringBuilder combo = new StringBuilder();
+        int value = index;
+        for (int i = 0; i < 3; i++) {
+            combo.insert(0, (value % 2 == 0) ? "L" : "R");
+            value /= 2;
+        }
+        return combo.toString();
+    }
+	
 }

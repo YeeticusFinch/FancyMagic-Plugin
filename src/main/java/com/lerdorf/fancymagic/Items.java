@@ -39,6 +39,23 @@ public class Items {
 		setItemMeta(meta);
 	}};
 	
+	public static String requirementsString(SpellType spell) {
+		String requirements = ""; // Spell requirements for the spell that is being added
+		if  (spell.hotbarRequirements != null && spell.hotbarRequirements.length > 0) {
+			for (Material mat : spell.hotbarRequirements) {
+				requirements += mat.toString() + " (hotbar)";
+			}
+		}
+		if  (spell.inventoryRequirements != null && spell.inventoryRequirements.length > 0) {
+			for (Material mat : spell.inventoryRequirements) {
+				requirements += mat.toString() + " (inventory)";
+			}
+		}
+		if (requirements.length() > 0)
+			requirements += "\n";
+		return requirements;
+	}
+	
 	//Items.java
 	public static void addSpell(ItemStack spellbook, String spellName, int spellLevel) {
 		if (spellbook != null) {
@@ -77,19 +94,7 @@ public class Items {
 					resultingLevel++;
 				}
 
-				String requirements = ""; // Spell requirements for the spell that is being added
-				if  (spell.hotbarRequirements != null && spell.hotbarRequirements.length > 0) {
-					for (Material mat : spell.hotbarRequirements) {
-						requirements += mat.toString() + " (hotbar)";
-					}
-				}
-				if  (spell.inventoryRequirements != null && spell.inventoryRequirements.length > 0) {
-					for (Material mat : spell.inventoryRequirements) {
-						requirements += mat.toString() + " (inventory)";
-					}
-				}
-				if (requirements.length() > 0)
-					requirements += "\n";
+				String requirements = requirementsString(spell);
 				
 				int existingPageNumber = -1;
 				if (existingLevel > 0) {
@@ -118,6 +123,20 @@ public class Items {
 		}
 	}
 	
+	public static Spell spellFromPage(String page) {
+		page = ChatColor.stripColor(page);
+		String spellName = page.substring(0, page.indexOf('\n'));
+		page = page.substring(page.indexOf('\n')+1);
+		int level = Integer.parseInt(page.substring(page.indexOf("Level: ")+7, page.indexOf(' ', page.indexOf("Level: ")+7)));
+		page = page.substring(page.indexOf(level+"") + (level+"").length(), page.indexOf('\n'));
+		int partialLevel = 0;
+		if (page.length() > 2) {
+			// We have a partial level
+			partialLevel = Integer.parseInt(page.substring(page.indexOf('-')+2, page.indexOf('/')));
+		}
+		return new Spell(Spell.getSpellType(spellName), level, partialLevel);
+	}
+	
 	public static Spell[] getSpells(ItemStack spellbook) {
 		if (spellbook != null) {
 			BookMeta bmeta = (BookMeta) spellbook.getItemMeta();
@@ -125,17 +144,7 @@ public class Items {
 				Spell[] spells = new Spell[bmeta.getPageCount()];
 				int i = 0;
 				for (String page : bmeta.getPages()) {
-					page = ChatColor.stripColor(page);
-					String spellName = page.substring(0, page.indexOf('\n'));
-					page = page.substring(page.indexOf('\n')+1);
-					int level = Integer.parseInt(page.substring(page.indexOf("Level: ")+7, page.indexOf(' ', page.indexOf("Level: ")+7)));
-					page = page.substring(page.indexOf(level+"") + (level+"").length(), page.indexOf('\n'));
-					int partialLevel = 0;
-					if (page.length() > 2) {
-						// We have a partial level
-						partialLevel = Integer.parseInt(page.substring(page.indexOf('-')+2, page.indexOf('/')));
-					}
-					spells[i] = new Spell(Spell.getSpellType(spellName), level, partialLevel);
+					spells[i] = spellFromPage(page);
 					i++;
 				}
 				return spells;

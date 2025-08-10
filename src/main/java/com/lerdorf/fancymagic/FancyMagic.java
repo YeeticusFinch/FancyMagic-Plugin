@@ -20,10 +20,12 @@ import org.bukkit.Particle.DustOptions;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.Lectern;
 import org.bukkit.block.data.type.TrapDoor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
+import org.bukkit.craftbukkit.block.impl.CraftLectern;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
@@ -46,6 +48,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -192,19 +195,28 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     }
     
     public HashMap<Player, List<Boolean>> clicks = new HashMap<>();
+    public HashMap<Player, Long> lastClick = new HashMap<>();
     
-    public boolean rightClick(Player player, boolean rightClick) {
+    public boolean use(Player player, boolean rightClick) {
     	
     	ItemStack item = player.getEquipment().getItemInMainHand();
     	if (item != null) {
     		ItemMeta meta = item.getItemMeta();
     		if (meta != null && meta.getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) && meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
-    			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
-	    			if (!clicks.containsKey(player.getUniqueId())) {
+    			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
+    				if (clicks.containsKey(player) && System.currentTimeMillis() - lastClick.get(player) <= 2) {
+        				// Clicked too fast, probably the same click
+    					lastClick.put(player, System.currentTimeMillis());
+    					return true;
+    				}
+    				lastClick.put(player, System.currentTimeMillis());
+    				if (!clicks.containsKey(player)) {
 	    				clicks.put(player, new ArrayList<>());
 	    				Bukkit.getScheduler().runTaskLater(plugin, () -> {
-	    					if (clicks.containsKey(player.getUniqueId()))
-								clicks.remove(player.getUniqueId());
+	    					if (clicks.containsKey(player)) {
+	    						player.sendActionBar("");
+								clicks.remove(player);
+	    					}
 						}, 20);
 	    			}
 					String bar = "";
@@ -212,7 +224,9 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 						bar += b ? "R " : "L ";
 					bar += rightClick ? "R" : "L";
 					clicks.get(player).add(rightClick);
+					player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
 					player.sendActionBar(ChatColor.AQUA + bar);
+					return true;
     			} else {
     				player.sendMessage(ChatColor.YELLOW + "Warning: Are you trying to cast a spell? You must have your spellbook in your offhand.");
     				return false;
@@ -240,6 +254,22 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     public void playerInteractEvent(PlayerInteractEvent event) {
     	boolean rightClick = false;
     	boolean click = false;
+    	
+    	if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
+    		if (event.getClickedBlock().getType() == Material.LECTERN) {
+    			Lectern lectern = (Lectern) event.getClickedBlock().getState();
+    			ItemStack[] items = lectern.getInventory().getContents();
+    			for (ItemStack item : items) {
+    				if (item != null && item.getType() == Material.WRITTEN_BOOK && item.getItemMeta().hasItemModel() && item.getItemMeta().getItemModel().toString().toLowerCase().contains("fsp:spellbook")) {
+    					event.getPlayer().setMetadata("spellbook_lectern", new FixedMetadataValue(plugin, event.getClickedBlock()));
+    					sbMenu.openMainMenu(event.getPlayer(), item);
+    					event.setCancelled(true);
+    					return;
+    				}
+    			}
+    		}
+    	}
+    	
     	if (event.getAction() == Action.LEFT_CLICK_AIR|| event.getAction() == Action.LEFT_CLICK_BLOCK) {
     		rightClick = false;
     		click = true;
@@ -248,7 +278,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     		click = true;
     	}
     	if (click) {
-	    	boolean cancelEvent = rightClick(event.getPlayer(), rightClick);
+	    	boolean cancelEvent = use(event.getPlayer(), rightClick);
 	    	if (cancelEvent)
 	    		event.setCancelled(true);
     	}
@@ -256,7 +286,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     
     @EventHandler
     public void playerInteractEntityEvent(PlayerInteractEntityEvent event) {
-    	boolean cancelEvent = rightClick(event.getPlayer(), true);
+    	boolean cancelEvent = use(event.getPlayer(), true);
     	if (cancelEvent)
     		event.setCancelled(true);
     	
@@ -264,7 +294,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     
     @EventHandler
     public void blockPlaceEvent(BlockPlaceEvent event) {
-    	boolean cancelEvent = rightClick(event.getPlayer(), true);
+    	boolean cancelEvent = use(event.getPlayer(), true);
     	if (cancelEvent)
     		event.setCancelled(true);
     	
@@ -273,7 +303,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     @EventHandler
     public void entityDamageByEntity(EntityDamageByEntityEvent event) {
     	if (event.getDamager() instanceof Player p) {
-	    	boolean cancelEvent = rightClick(p, false);
+	    	boolean cancelEvent = use(p, false);
 	    	if (cancelEvent)
 	    		event.setCancelled(true);
     	}
