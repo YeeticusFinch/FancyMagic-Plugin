@@ -289,7 +289,7 @@ public class Spell {
 			"Places your powder snow at a ranged distance on your crosshair."
 			);
 	public static final SpellType TRANSMUTE_LAVA = new SpellType(
-			"Transmute Water",
+			"Transmute Lava",
 			new String[] {
 					"PPP",
 					"TFG",

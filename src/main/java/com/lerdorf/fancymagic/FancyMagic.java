@@ -198,7 +198,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     	ItemStack item = player.getEquipment().getItemInMainHand();
     	if (item != null) {
     		ItemMeta meta = item.getItemMeta();
-    		if (meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
+    		if (meta != null && meta.getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) && meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
     			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
 	    			if (!clicks.containsKey(player.getUniqueId())) {
 	    				clicks.put(player, new ArrayList<>());
@@ -284,6 +284,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     	//ItemStack result = event.getRecipe().getResult();
     	ItemStack result = event.getInventory().getResult();
     	if (result != null && result.getType() == Material.BOOK) {
+    		//Bukkit.broadcastMessage("Crafting a book");
 	    	// get the items being used for the craft
 	    	CraftingInventory inv = event.getInventory();
 	
@@ -293,11 +294,16 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 	
 	        for (int i = 0; i < matrix.length; i++) {
 	            ItemStack item = matrix[i];
-	            if (item != null && item.getType() == Material.PAPER && item.getItemMeta().getItemModel().getNamespace().equals("fsp:scroll")) {
+	            //if (item != null && item.getType() == Material.PAPER)
+	            //	Bukkit.broadcastMessage(item.getItemMeta().getItemModel().asString());
+	            if (item != null && item.getType() == Material.PAPER && item.getItemMeta().getItemModel().asString().toLowerCase().contains("fsp:scroll")) {
 	            	scrolls.add(item);
+
+	        		//Bukkit.broadcastMessage("Adding scroll");
 	            }
 	        }
 	        if (scrolls.size() > 0) {
+	        	//Bukkit.broadcastMessage("Preparing a spellbook");
 	        	result = Items.SPELLBOOK.clone();
 	        	BookMeta bmeta = (BookMeta) result.getItemMeta();
 	        	Player player = ((Player)event.getView().getPlayer());

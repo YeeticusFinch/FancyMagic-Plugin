@@ -69,6 +69,9 @@ public class Items {
 					resultingLevel = spellLevel;
 					levelProgress += existingLevel;
 				}
+				else if (spellLevel == existingLevel) {
+					resultingLevel = spellLevel+1;
+				}
 				if (levelProgress >= resultingLevel) {
 					levelProgress -= resultingLevel;
 					resultingLevel++;
@@ -88,11 +91,27 @@ public class Items {
 				if (requirements.length() > 0)
 					requirements += "\n";
 				
-				bmeta.addPage(
-						ChatColor.UNDERLINE + "" + ChatColor.BOLD + ChatColor.LIGHT_PURPLE + spellName + "\n"
-						+ ChatColor.RESET + ChatColor.WHITE + "Level: " + ChatColor.AQUA + resultingLevel + " " + (levelProgress > 0 ? (ChatColor.GRAY + "- " + levelProgress + "/" + resultingLevel) : "") + "\n" 
-						+ ChatColor.RESET + requirements
-						+ ChatColor.RESET + ChatColor.ITALIC + ChatColor.WHITE + spell.description);
+				int existingPageNumber = -1;
+				if (existingLevel > 0) {
+					for (int i = 1; i <= bmeta.getPageCount(); i++) {
+						if (bmeta.getPage(i).substring(0, bmeta.getPage(i).indexOf('\n')).toLowerCase().contains(spellName.toLowerCase())) {
+							existingPageNumber = i;
+							//Bukkit.broadcastMessage("Found spell " + spellName + "on page " + i);
+							break;
+						}
+					}
+				}
+				
+				String spellPage = "§5§l§n" + spellName + "\n"
+						+ "§r§0Level: " + ChatColor.BLUE + resultingLevel + " " + (levelProgress > 0 ? (ChatColor.GRAY + "- " + levelProgress + "/" + resultingLevel) : "") + "\n" 
+						+ ChatColor.RESET + ChatColor.DARK_GREEN + requirements
+						+ ChatColor.BLUE + "-------------------"
+						+ "§r§o§8" + spell.description;
+				
+				if (existingPageNumber > -1)
+					bmeta.setPage(existingPageNumber, spellPage);
+				else
+					bmeta.addPage(spellPage);
 				
 				spellbook.setItemMeta(bmeta);
 			}
