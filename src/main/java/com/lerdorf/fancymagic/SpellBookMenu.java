@@ -3,6 +3,8 @@ package com.lerdorf.fancymagic;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -96,7 +98,7 @@ public class SpellBookMenu implements Listener {
                 inv.setItem(row + 5, menuItem(Material.LIGHT_GRAY_STAINED_GLASS_PANE, null, "§7Not Prepared"));
             }
             inv.setItem(row + 6, menuItem(
-                    isPrepared ? Material.GREEN_CONCRETE : Material.GRAY_CONCRETE, null,
+                    isPrepared ? Material.GREEN_WOOL : Material.BLACK_WOOL, null,
                     isPrepared ? "§aPrepared" : "§7Not Prepared",
                     "Click to toggle"));
             inv.setItem(row + 7, menuItem(Material.ARROW, null, "§eMove Up"));
@@ -130,7 +132,7 @@ public class SpellBookMenu implements Listener {
             if (e.getCurrentItem() == null) return;
             if (e.getSlot() == 11) openPrepareSpellsMenu(player, getMetaSpellBook(player), 0);
             if (e.getSlot() == 15) openAddSpellMenu(player, getMetaSpellBook(player));
-            if (e.getSlot() == 17) {
+            if (e.getSlot() == 17) { // grab spellbook
                 e.setCancelled(true);
                 // Close inventory first
                 player.closeInventory();
@@ -175,7 +177,18 @@ public class SpellBookMenu implements Listener {
                     } else {
                         player.sendMessage("§aSpellbook returned to your inventory.");
                     }
+                    
+                    lectern.getInventory().clear();
+                    lectern.update();
 
+
+                    Directional dir = (Directional) lecternBlock.getBlockData();
+                    BlockFace facing = dir.getFacing();
+
+                    lecternBlock.setType(Material.LECTERN);
+                    dir = (Directional) lecternBlock.getBlockData();
+                    dir.setFacing(facing);
+                    lecternBlock.setBlockData(dir);
                     // Remove metadata if needed, e.g. the lectern location
                     player.removeMetadata("spellbook_lectern", plugin);
 
@@ -255,6 +268,10 @@ public class SpellBookMenu implements Listener {
                 if (prepared.stream().anyMatch(s -> s.name.equals(targetSpell.name))) {
                     prepared.removeIf(s -> s.name.equals(targetSpell.name));
                 } else {
+                	if (prepared.size() >= 8) {
+                        player.sendMessage("§cYou can only prepare up to 8 spells!");
+                        return;
+                    }
                     prepared.add(targetSpell);
                 }
                 savePreparedSpells(spellBook, prepared);
@@ -332,7 +349,7 @@ public class SpellBookMenu implements Listener {
         return spells;
     }
 
-    private List<SpellData> loadPreparedSpells(ItemStack book) {
+    public List<SpellData> loadPreparedSpells(ItemStack book) {
         List<SpellData> prepared = new ArrayList<>();
 
         if (book == null || !book.hasItemMeta()) {
@@ -420,7 +437,7 @@ public class SpellBookMenu implements Listener {
     }
 
     // ========= DATA CLASS =========
-    private static class SpellData {
+    public static class SpellData {
         String name;
         int level;
         String requirement;
@@ -457,5 +474,24 @@ public class SpellBookMenu implements Listener {
         	String requirement = Items.requirementsString(spell.data);
         	return new SpellData(spell.data.name, spell.level, requirement, spell.data.cost, spell.data.description);
         }
+        
+        Spell toSpell() {
+        	SpellType type = Spell.getSpellType(name);
+        	return new Spell(type, level, 0);
+        }
     }
+
+	public Spell fromClickCombination(List<SpellData> spellData, List<Boolean> list) {
+		// The booleans in list, true is an 'R', false is an 'L'	
+		int index = 0;
+		int i = list.size()-1;
+		
+		for (boolean b : list) // convert from binary to int
+			index += b ? Math.pow(2, i) : 0;
+		
+		if (index < spellData.size() && spellData.get(index) != null)
+			return spellData.get(index).toSpell();
+		else
+			return null;
+	}
 }

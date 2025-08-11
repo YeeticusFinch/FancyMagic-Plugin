@@ -1,10 +1,30 @@
 package com.lerdorf.fancymagic;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.BoundingBox;
+import org.bukkit.util.Transformation;
+import org.bukkit.util.Vector;
+import org.joml.AxisAngle4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 public class Spell {
 
@@ -508,5 +528,297 @@ public class Spell {
         }
         return combo.toString();
     }
+
+    void setOnFire(Block block) {
+    	if (block.getType().isAir())
+    		block.setType(Material.FIRE);
+    	else {
+	    	if (block.getLocation().add(0, 0, 1).getBlock().getType().isAir())
+	    		block.getLocation().add(0, 0, 1).getBlock().setType(Material.FIRE);
+	    	if (block.getLocation().add(0, 0, -1).getBlock().getType().isAir())
+	    		block.getLocation().add(0, 0, -1).getBlock().setType(Material.FIRE);
+	    	if (block.getLocation().add(0, 1, 0).getBlock().getType().isAir())
+	    		block.getLocation().add(0, 1, 0).getBlock().setType(Material.FIRE);
+	    	if (block.getLocation().add(0, -1, 0).getBlock().getType().isAir())
+	    		block.getLocation().add(0, -1, 0).getBlock().setType(Material.FIRE);
+	    	if (block.getLocation().add(-1, 0, 0).getBlock().getType().isAir())
+	    		block.getLocation().add(-1, 0, 0).getBlock().setType(Material.FIRE);
+	    	if (block.getLocation().add(1, 0, 0).getBlock().getType().isAir())
+	    		block.getLocation().add(1, 0, 0).getBlock().setType(Material.FIRE);
+    	}
+    }
+    
+	public int cast(LivingEntity le, ItemStack item, float rangeMod, float cooldownMod, float potencyMod) {
+		
+		int cooldown = 20;
+		
+		float lvl = level*potencyMod;
+//shootLaser(LivingEntity mob, Location loc, Vector step, FancyParticle particle, double range, boolean hitscan, double radius, boolean pierceBlocks, boolean pierceEntity, BiConsumer<Location, Entity> hitEntity, BiConsumer<Location, Block> hitBlock)shootLaser(LivingEntity mob, Location loc, Vector step, FancyParticle particle, double range, boolean hitscan, double radius, boolean pierceBlocks, boolean pierceEntity, BiConsumer<Location, Entity> hitEntity, BiConsumer<Location, Block> hitBlock)
+		switch (data.name) {
+			case "Firebolt":
+				shootLaser(
+						le, 
+						le.getEyeLocation().add(le.getEyeLocation().getDirection()), 
+						le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.2f),
+						new FancyParticle(Particle.FLAME, 1, 0, 0, 0, 0),
+						(20+lvl*4)*rangeMod,
+						false,
+						0.3,
+						false,
+						false,
+						(point, entity) -> {
+							entity.damage(3+lvl);
+							entity.setFireTicks((int)(5+lvl*5));
+							setOnFire(point.getBlock());
+							setOnFire(point.add(0, -1, 0).getBlock());
+						},
+						(point, block) -> {
+							if (point.getBlock().getType().isAir())
+								point.getBlock().setType(Material.FIRE);
+							setOnFire(block);
+						}
+					);
+				break;
+			case "Fire Barrage":
+				break;
+			case "Fireball":
+				break;
+			case "Explosion":
+				break;
+			case "Fire Shield":
+				break;
+			case "Fire Resistance":
+				break;
+			case "Blade Singer":
+				break;
+		}
+		
+		return (int)Math.min(cooldown * cooldownMod, 1);
+		
+	}
 	
+	public void throwItem(ItemStack item, LivingEntity mob, Location loc, Vector step, FancyParticle particle, double range, double radius, boolean pierceBlocks, boolean pierceEntity, BiConsumer<Location, LivingEntity> hitEntity, BiConsumer<Location, Block> hitBlock) {
+		loc.add(step);
+
+		Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(90)) // rotate 90° on X axis
+				.rotateZ((float) Math.toRadians(-45)); // then 45° on Y axis
+
+		// Convert to AxisAngle
+		AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+
+		Vector offset = new Vector(0, -0.2f, 0);
+		float rightOffset = 0.2f;
+		float forwardOffset = 0.4f;
+
+		ItemDisplay display = loc.getWorld().spawn(loc.clone().add(step.clone().multiply(forwardOffset).add(offset)),
+				ItemDisplay.class, entity -> {
+					// customize the entity!
+					entity.setItemStack(item);
+					entity.setTransformation(
+							new Transformation(new Vector3f(), axisAngle, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+
+				});
+
+		Collection<LivingEntity> nearbyEntities = loc.getWorld().getNearbyLivingEntities(
+				loc.clone().add(step.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+				entity -> !entity.equals(mob));
+
+		new BukkitRunnable() {
+			int ticks = 0;
+			int lifetime = 1000;
+			double distance = 0;
+			Location point = loc;
+			ArrayList<UUID> hitEntities = new ArrayList<UUID>();
+
+			@Override
+			public void run() {
+
+				point = point.add(step);
+				particle.spawn(point.clone().subtract(step.clone().multiply(0.5f)));
+				particle.spawn(point);
+				point.setRotation(point.getYaw()+20, point.getPitch());
+				display.teleport(point);
+				display.setRotation(display.getYaw()+20, display.getPitch());
+
+				for (LivingEntity le : nearbyEntities) {
+					if (intersectsSegmentAABB(point.toVector().subtract(step), point.toVector(), le.getBoundingBox()) && !hitEntities.contains(le.getUniqueId())) {
+						hitEntities.add(le.getUniqueId());
+						
+						hitEntity.accept(point, le);
+						if (!pierceEntity) {
+							display.remove();
+							cancel();
+							return;
+						}
+					}
+				}
+
+				Block block = point.getBlock();
+				if (!block.isPassable() && block.getBoundingBox().contains(point.toVector())) {
+					point = getClosestPoint(loc.toVector(), block.getBoundingBox()).toLocation(loc.getWorld())
+							.subtract(step.clone().normalize().multiply(0.5f));
+					hitBlock.accept(point, block);
+					if (!pierceBlocks) {
+						display.remove();
+						cancel();
+						return;
+					}
+				}
+
+				if (ticks > lifetime || distance > range) {
+					display.remove();
+					cancel();
+					return;
+				}
+				ticks++;
+			}
+		}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+	}
+
+	public void shootLaser(LivingEntity mob, Location loc, Vector step, FancyParticle particle, double range, boolean hitscan, double radius, boolean pierceBlocks, boolean pierceEntity, BiConsumer<Location, LivingEntity> hitEntity, BiConsumer<Location, Block> hitBlock) {
+		loc.add(step);
+
+		Collection<LivingEntity> nearbyEntities = loc.getWorld().getNearbyLivingEntities(
+				loc.clone().add(step.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+				entity -> !entity.equals(mob));
+
+		if (hitscan) {
+			
+			Location hit = raycastForBlocks(loc.clone(), step.clone().normalize().multiply(range));
+
+			Location point = loc.clone();
+			
+			for (LivingEntity le : nearbyEntities) {
+				//if (!hitEntities.contains(le.getUniqueId())) {
+				//	hitEntities.add(le.getUniqueId());
+				if (intersectsSegmentAABB(point.clone().subtract(step).toVector(), point.toVector(), le.getBoundingBox())) {
+					hitEntity.accept(point, le);
+					if (!pierceEntity) {
+						hit = getClosestPoint(point.clone().subtract(step).toVector(), le.getBoundingBox()).toLocation(point.getWorld());
+						break;
+					}
+				}
+				//}
+			}
+			
+			double dist = hit.distance(loc);
+			Vector halfStep = step.clone().normalize().multiply(0.5);
+			for (float i = 0; i < dist; i += step.length()/2) {
+				particle.spawn(point.add(halfStep));
+			}
+			
+			hitBlock.accept(hit, hit.getBlock());
+			
+		} else {
+
+			new BukkitRunnable() {
+				int ticks = 0;
+				int lifetime = 1000;
+				double distance = 0;
+				Location point = loc;
+				ArrayList<UUID> hitEntities = new ArrayList<UUID>();
+
+				@Override
+				public void run() {
+
+					point = point.add(step);
+					particle.spawn(point);
+
+					for (LivingEntity le : nearbyEntities) {
+						if (intersectsSegmentAABB(point.clone().subtract(step).toVector(), point.toVector(), le.getBoundingBox()) && !hitEntities.contains(le.getUniqueId())) {
+							hitEntities.add(le.getUniqueId());
+							hitEntity.accept(point, le);
+							if (!pierceEntity) {
+								cancel();
+								return;
+							}
+						}
+					}
+
+					Block block = point.getBlock();
+					if (!block.isPassable() && block.getBoundingBox().contains(point.toVector())) {
+						point = getClosestPoint(loc.toVector(), block.getBoundingBox()).toLocation(loc.getWorld())
+								.subtract(step.clone().normalize().multiply(0.5f));
+
+						cancel();
+						return;
+					}
+
+					if (ticks > lifetime || distance > range) {
+						cancel();
+						return;
+					}
+					ticks++;
+				}
+			}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+		}
+	}
+
+	public Location raycastForBlocks(Location loc, Vector target) {
+		Location result = loc.clone();
+
+		double inc = 0.9;
+
+		for (int i = 0; i < target.length() / inc; i++) {
+			Block block = result.getBlock();
+			if (!block.isPassable() && block.getBoundingBox().contains(result.toVector())) {
+				return getClosestPoint(loc.toVector(), block.getBoundingBox()).toLocation(loc.getWorld())
+						.subtract(target.clone().normalize().multiply(0.5f));
+			}
+			result = result.add(target.clone().normalize().multiply(0.9));
+		}
+
+		result.add(target.clone().normalize().multiply(target.length() - inc * ((int) (target.length() / inc))));
+
+		return result;
+	}
+
+	public static Vector getClosestPoint(Vector point, BoundingBox box) {
+		double x = clamp(point.getX(), box.getMinX(), box.getMaxX());
+		double y = clamp(point.getY(), box.getMinY(), box.getMaxY());
+		double z = clamp(point.getZ(), box.getMinZ(), box.getMaxZ());
+		return new Vector(x, y, z);
+	}
+
+	private static double clamp(double val, double min, double max) {
+		return Math.max(min, Math.min(max, val));
+	}
+
+	public boolean intersectsSegmentAABB(Vector start, Vector end, BoundingBox box) {
+		Vector dir = end.clone().subtract(start);
+		Vector invDir = new Vector(dir.getX() == 0 ? Double.POSITIVE_INFINITY : 1.0 / dir.getX(),
+				dir.getY() == 0 ? Double.POSITIVE_INFINITY : 1.0 / dir.getY(),
+				dir.getZ() == 0 ? Double.POSITIVE_INFINITY : 1.0 / dir.getZ());
+
+		double tMin = 0.0;
+		double tMax = 1.0;
+
+		Vector min = new Vector(box.getMinX(), box.getMinY(), box.getMinZ());
+		Vector max = new Vector(box.getMaxX(), box.getMaxY(), box.getMaxZ());
+
+		// Iterate over X, Y, Z manually
+		double[] startComponents = { start.getX(), start.getY(), start.getZ() };
+		double[] invComponents = { invDir.getX(), invDir.getY(), invDir.getZ() };
+		double[] minComponents = { min.getX(), min.getY(), min.getZ() };
+		double[] maxComponents = { max.getX(), max.getY(), max.getZ() };
+
+		for (int i = 0; i < 3; i++) {
+			double startComponent = startComponents[i];
+			double inv = invComponents[i];
+			double t1 = (minComponents[i] - startComponent) * inv;
+			double t2 = (maxComponents[i] - startComponent) * inv;
+
+			double tNear = Math.min(t1, t2);
+			double tFar = Math.max(t1, t2);
+
+			tMin = Math.max(tMin, tNear);
+			tMax = Math.min(tMax, tFar);
+
+			if (tMax < tMin) {
+				return false;
+			}
+		}
+
+		return true;
+	}
 }

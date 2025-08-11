@@ -60,6 +60,8 @@ import org.joml.Quaternionf;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
+import com.lerdorf.fancymagic.SpellBookMenu.SpellData;
+
 import de.tr7zw.nbtapi.NBTItem;
 
 import org.joml.Vector3f;
@@ -204,7 +206,12 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     		ItemMeta meta = item.getItemMeta();
     		if (meta != null && meta.getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) && meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
     			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
-    				if (clicks.containsKey(player) && System.currentTimeMillis() - lastClick.get(player) <= 2) {
+    				if (player.hasCooldown(item)) {
+    					player.playSound(player, Sound.ENTITY_ITEM_BREAK, 1, 1);
+    					player.sendMessage(ChatColor.RED + "You must wait for the cooldown to complete before casting another spell");
+    					return true;
+    				}
+    				if (clicks.containsKey(player) && System.currentTimeMillis() - lastClick.get(player) <= 5) {
         				// Clicked too fast, probably the same click
     					lastClick.put(player, System.currentTimeMillis());
     					return true;
@@ -226,6 +233,14 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 					clicks.get(player).add(rightClick);
 					player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
 					player.sendActionBar(ChatColor.AQUA + bar);
+					List<SpellData> spellData = sbMenu.loadPreparedSpells(player.getEquipment().getItemInOffHand());
+					spellData.size();
+					if (clicks.get(player).size() >= spellData.size()) {
+						//Spell.getClickCombination(preparedIndex, prepared.size());
+						Spell spell = sbMenu.fromClickCombination(spellData, clicks.get(player));
+						int cooldown = castSpell(player, spell, item);
+						player.setCooldown(item, cooldown);
+					}
 					return true;
     			} else {
     				player.sendMessage(ChatColor.YELLOW + "Warning: Are you trying to cast a spell? You must have your spellbook in your offhand.");
@@ -237,8 +252,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     	return false;
     }
     
-    public void castSpell(Player player) {
-    	ItemStack item = player.getEquipment().getItemInMainHand();
+    public int castSpell(Player player, Spell spell, ItemStack item) {
     	if (item != null) {
     		ItemMeta meta = item.getItemMeta();
     		if (meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
@@ -246,8 +260,11 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     			float rangeMod = nbt.getFloat("Range");
     			float cooldownMod = nbt.getFloat("Cooldown");
     			float potencyMod = nbt.getFloat("Potency");
+    			player.sendActionBar(ChatColor.LIGHT_PURPLE + spell.data.name);
+    			return spell.cast(player, item, rangeMod, cooldownMod, potencyMod);
     		}
     	}
+    	return 20;
     }
     
     @EventHandler
