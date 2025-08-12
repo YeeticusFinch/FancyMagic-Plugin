@@ -26,6 +26,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.craftbukkit.block.impl.CraftLectern;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
@@ -149,6 +150,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 
 		loadConfig();
 		saveConfig();
+		SpellManager.startMainLoop();
 		
 		registerRecipes();
 		sbMenu = new SpellBookMenu(this);
@@ -206,11 +208,6 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     		ItemMeta meta = item.getItemMeta();
     		if (meta != null && meta.getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) && meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
     			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
-    				if (player.hasCooldown(item)) {
-    					player.playSound(player, Sound.ENTITY_ITEM_BREAK, 1, 1);
-    					player.sendMessage(ChatColor.RED + "You must wait for the cooldown to complete before casting another spell");
-    					return true;
-    				}
     				if (clicks.containsKey(player) && System.currentTimeMillis() - lastClick.get(player) <= 5) {
         				// Clicked too fast, probably the same click
     					lastClick.put(player, System.currentTimeMillis());
@@ -224,7 +221,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 	    						player.sendActionBar("");
 								clicks.remove(player);
 	    					}
-						}, 20);
+						}, 30);
 	    			}
 					String bar = "";
 					for (boolean b : clicks.get(player))
@@ -235,9 +232,16 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 					player.sendActionBar(ChatColor.AQUA + bar);
 					List<SpellData> spellData = sbMenu.loadPreparedSpells(player.getEquipment().getItemInOffHand());
 					spellData.size();
-					if (clicks.get(player).size() >= spellData.size()) {
+					if (clicks.get(player).size() >= (spellData.size() <= 2 ? 1 : spellData.size() <= 3 ? 2 : 3)) {
+
+	    				if (player.hasCooldown(item)) {
+	    					player.playSound(player, Sound.ENTITY_ITEM_BREAK, 1, 2);
+	    					player.sendActionBar(ChatColor.YELLOW + "Cooldown");
+	    					return true;
+	    				}
 						//Spell.getClickCombination(preparedIndex, prepared.size());
 						Spell spell = sbMenu.fromClickCombination(spellData, clicks.get(player));
+	    				clicks.get(player).clear();
 						int cooldown = castSpell(player, spell, item);
 						player.setCooldown(item, cooldown);
 					}
@@ -254,6 +258,10 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     
     public int castSpell(Player player, Spell spell, ItemStack item) {
     	if (item != null) {
+    		if (spell == null || spell.data == null) {
+    			player.sendActionBar(ChatColor.RED + "Invalid Spell");
+    			return 40;
+    		}
     		ItemMeta meta = item.getItemMeta();
     		if (meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
     			NBTItem nbt = new NBTItem(item);
@@ -264,7 +272,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     			return spell.cast(player, item, rangeMod, cooldownMod, potencyMod);
     		}
     	}
-    	return 20;
+    	return 40;
     }
     
     @EventHandler
@@ -274,6 +282,9 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     	
     	if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
     		if (event.getClickedBlock().getType() == Material.LECTERN) {
+    			if (event.getPlayer().getActiveItem() != null && event.getPlayer().getActiveItem().getType() == Material.WRITTEN_BOOK) {
+    				return;
+    			}
     			Lectern lectern = (Lectern) event.getClickedBlock().getState();
     			ItemStack[] items = lectern.getInventory().getContents();
     			for (ItemStack item : items) {
@@ -284,6 +295,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     					return;
     				}
     			}
+    			return;
     		}
     	}
     	
@@ -319,7 +331,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     
     @EventHandler
     public void entityDamageByEntity(EntityDamageByEntityEvent event) {
-    	if (event.getDamager() instanceof Player p) {
+    	if (event.getDamager() instanceof Player p && event.getDamageSource().getDamageType() == DamageType.PLAYER_ATTACK) {
 	    	boolean cancelEvent = use(p, false);
 	    	if (cancelEvent)
 	    		event.setCancelled(true);

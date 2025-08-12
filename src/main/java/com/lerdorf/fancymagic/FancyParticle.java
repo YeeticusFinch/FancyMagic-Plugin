@@ -58,6 +58,10 @@ public class FancyParticle {
 		this.block = block;
 	}
 	
+	public static void spawn(Particle p, Location loc, int count, double dx, double dy, double dz, double extra, DustOptions dust) {
+		loc.getWorld().spawnParticle(p, loc, count, dx, dy, dz, extra, dust);
+	}
+	
 	public void spawn(Location loc) {
 		if (dust != null)
 			loc.getWorld().spawnParticle(p, loc, count, dx, dy, dz, extra, dust);

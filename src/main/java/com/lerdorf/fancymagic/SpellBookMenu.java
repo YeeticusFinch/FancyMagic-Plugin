@@ -87,7 +87,13 @@ public class SpellBookMenu implements Listener {
 
             int row = (i - startIndex) * 9; // each spell row starts here
 
-            inv.setItem(row + 1, menuItem(Material.PAPER, "fsp:scroll", "§e" + spell.name, "§aLevel: " + spell.level));
+            Spell actualSpell = spell.toSpell();
+            if (actualSpell.data.hotbarRequirements != null && actualSpell.data.hotbarRequirements.length > 0)
+            	inv.setItem(row + 1, menuItem(actualSpell.data.hotbarRequirements[0], null, true, "§e" + spell.name, "§aLevel: " + spell.level));
+            else if (actualSpell.data.inventoryRequirements != null && actualSpell.data.inventoryRequirements.length > 0)
+            	inv.setItem(row + 1, menuItem(actualSpell.data.inventoryRequirements[0], null, true, "§e" + spell.name, "§aLevel: " + spell.level));
+            else
+            	inv.setItem(row + 1, menuItem(Material.PAPER, "fsp:scroll", true, "§e" + spell.name, "§aLevel: " + spell.level));
             //inv.setItem(row + 1, menuItem(Material.EXPERIENCE_BOTTLE, null, "§aLevel: " + spell.level));
             inv.setItem(row + 2, menuItem(Material.PAPER, null, "§bReq: " + spell.requirement));
             inv.setItem(row + 3, menuItem(Material.GOLD_INGOT, null, "§6Cost: " + spell.cost));
@@ -106,14 +112,22 @@ public class SpellBookMenu implements Listener {
         }
 
         // Pagination controls in bottom row
+        int totalPages = (int) Math.ceil((double) spells.size() / spellsPerPage);
+
         if (page > 0) {
-            inv.setItem(45, menuItem(Material.ARROW, null, "§ePrevious Page"));
-        }
-        if (endIndex < spells.size()) {
-            inv.setItem(53, menuItem(Material.ARROW, null, "§eNext Page"));
+            inv.setItem(45, menuItem(Material.ARROW, null, "§ePrevious Page", 
+                "§7Go to page " + page));
         }
 
-        inv.setItem(49, menuItem(Material.BARRIER, null, "§cBack", "Return to main menu"));
+        if (page < totalPages - 1) {
+            inv.setItem(53, menuItem(Material.ARROW, null, "§eNext Page", 
+                "§7Go to page " + (page + 2)));
+        }
+
+        // Update back button to show page info
+        inv.setItem(49, menuItem(Material.BARRIER, null, "§cBack", 
+            "Return to main menu", 
+            "§7Page " + (page + 1) + " of " + Math.max(1, totalPages)));
 
         player.openInventory(inv);
         player.setMetadata("spellbook_item", new FixedMetadataValue(plugin, spellBook));
@@ -184,11 +198,14 @@ public class SpellBookMenu implements Listener {
 
                     Directional dir = (Directional) lecternBlock.getBlockData();
                     BlockFace facing = dir.getFacing();
-
-                    lecternBlock.setType(Material.LECTERN);
-                    dir = (Directional) lecternBlock.getBlockData();
-                    dir.setFacing(facing);
-                    lecternBlock.setBlockData(dir);
+                    lecternBlock.setType(Material.OAK_SLAB);
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    	lecternBlock.setType(Material.LECTERN);
+                        Directional dir2 = (Directional) lecternBlock.getBlockData();
+                        dir2.setFacing(facing);
+                        lecternBlock.setBlockData(dir2);
+					}, 2);
+                    
                     // Remove metadata if needed, e.g. the lectern location
                     player.removeMetadata("spellbook_lectern", plugin);
 
@@ -250,16 +267,16 @@ public class SpellBookMenu implements Listener {
                     }
                     return;
                 } else if (clickedName.equalsIgnoreCase("Next Page")) {
-                    // Calculate max page
-                    int maxPage = (int) Math.ceil(spells.size() / 45.0) - 1;
-                    if (currentPage < maxPage) {
+                    // Calculate max page correctly - 5 spells per page
+                    int totalPages = (int) Math.ceil((double) spells.size() / 5);
+                    if (currentPage < totalPages - 1) {
                         openPrepareSpellsMenu(player, spellBook, currentPage + 1);
                     }
                     return;
                 }
             }
 
-            int spellIndex = (slot / 9) + (player.hasMetadata("spellbook_page") ? player.getMetadata("spellbook_page").get(0).asInt() * 45 : 0);
+            int spellIndex = (slot / 9) + (player.hasMetadata("spellbook_page") ? player.getMetadata("spellbook_page").get(0).asInt() * 5 : 0);
             if (spellIndex >= spells.size()) return;
             SpellData targetSpell = spells.get(spellIndex);
 
@@ -274,30 +291,32 @@ public class SpellBookMenu implements Listener {
                     }
                     prepared.add(targetSpell);
                 }
+                spells = loadSpells(spellBook);
+                List<SpellData> newPrepared = new ArrayList<SpellData>();
+                for (SpellData spell : spells) {
+                	boolean isPrepared = prepared.stream().anyMatch(s -> s.name.equals(spell.name));
+                	if (isPrepared)
+                		newPrepared.add(spell);
+                }
+                prepared = newPrepared;
                 savePreparedSpells(spellBook, prepared);
                 updateSpellBookLore(spellBook, prepared);
                 openPrepareSpellsMenu(player, spellBook, player.hasMetadata("spellbook_page") ? player.getMetadata("spellbook_page").get(0).asInt() : 0);
             } else if (col == 7 || col == 8) { // move up/down
-                int idx = -1;
-                for (int i = 0; i < prepared.size(); i++) {
-                    if (prepared.get(i).name.equals(targetSpell.name)) {
-                        idx = i;
-                        break;
-                    }
-                }
-                if (idx != -1) {
-                    int newIndex = col == 7 ? idx - 1 : idx + 1;
-                    if (newIndex >= 0 && newIndex < prepared.size()) {
-                        Collections.swap(prepared, idx, newIndex);
-                        savePreparedSpells(spellBook, prepared);
-                        updateSpellBookLore(spellBook, prepared);
-                    }
-                }
                 int bookIndex = spells.indexOf(targetSpell);
                 int swapWith = col == 7 ? bookIndex - 1 : bookIndex + 1;
                 if (swapWith >= 0 && swapWith < spells.size()) {
                     swapBookPages(spellBook, bookIndex, swapWith);
                 }
+                spells = loadSpells(spellBook);
+                List<SpellData> newPrepared = new ArrayList<SpellData>();
+                for (SpellData spell : spells) {
+                	boolean isPrepared = prepared.stream().anyMatch(s -> s.name.equals(spell.name));
+                	if (isPrepared)
+                		newPrepared.add(spell);
+                }
+                prepared = newPrepared;
+                savePreparedSpells(spellBook, prepared);
                 openPrepareSpellsMenu(player, spellBook, player.hasMetadata("spellbook_page") ? player.getMetadata("spellbook_page").get(0).asInt() : 0);
             }
         }
@@ -305,8 +324,13 @@ public class SpellBookMenu implements Listener {
 
     // ========= HELPERS =========
     private ItemStack menuItem(Material mat, String itemModel, String name, String... lore) {
+        return menuItem(mat, itemModel, false, name, lore);
+    }
+    private ItemStack menuItem(Material mat, String itemModel, boolean enchantGlint, String name, String... lore) {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
+        if (enchantGlint)
+        	meta.setEnchantmentGlintOverride(true);
         if (itemModel != null)
         	meta.setItemModel(NamespacedKey.fromString(itemModel));
         meta.setDisplayName(name);
@@ -480,16 +504,41 @@ public class SpellBookMenu implements Listener {
         	return new Spell(type, level, 0);
         }
     }
+    
+    public static int getIndexFromClickCombination(List<Boolean> combo, int totalSpells) {
+    	if (combo == null || combo.size() == 0)
+    		return -1;
+        if (totalSpells <= 2) {
+            // One click: false = L -> 0, true = R -> 1
+            return combo.get(0) ? 1 : 0;
+        }
+        
+        if (totalSpells < 4 && combo.size() > 1) {
+            // Map manually since your forward method uses a fixed order
+            boolean first = combo.get(0);
+            boolean second = combo.get(1);
+            
+            if (!first && !second) return 0; // LL
+            if (!first && second)  return 1; // LR
+            if (first && !second)  return 2; // RL
+            if (first && second)   return 3; // RR
+        }
+        
+        // For >= 4, treat as binary (false = 0, true = 1)
+        int value = 0;
+        for (boolean click : combo) {
+            value <<= 1;         // shift left by 1
+            if (click) value |= 1; // set last bit to 1 for R
+        }
+        return value;
+    }
+
 
 	public Spell fromClickCombination(List<SpellData> spellData, List<Boolean> list) {
 		// The booleans in list, true is an 'R', false is an 'L'	
-		int index = 0;
-		int i = list.size()-1;
+		int index = getIndexFromClickCombination(list, spellData.size());
 		
-		for (boolean b : list) // convert from binary to int
-			index += b ? Math.pow(2, i) : 0;
-		
-		if (index < spellData.size() && spellData.get(index) != null)
+		if (index > -1 && index < spellData.size() && spellData.get(index) != null)
 			return spellData.get(index).toSpell();
 		else
 			return null;

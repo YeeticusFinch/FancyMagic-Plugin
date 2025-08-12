@@ -173,6 +173,7 @@ public class Items {
 		lore.add("§7Range: §r" + toPrettyPercent(rangeMod, true) + "§r");
 		lore.add("§7Cooldown: §r" + toPrettyPercent(cooldownMod, false) + "§r");
 		lore.add("§7Potency: §r" + toPrettyPercent(potencyMod, true) + "§r");
+		lore.add("§7Durability: §r" + durability + "§r");
 
 		meta.setLore(lore);
 		
