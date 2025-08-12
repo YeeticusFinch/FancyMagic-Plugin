@@ -93,22 +93,21 @@ public class SpellBookMenu implements Listener {
             else if (actualSpell.data.inventoryRequirements != null && actualSpell.data.inventoryRequirements.length > 0)
             	inv.setItem(row + 1, menuItem(actualSpell.data.inventoryRequirements[0], null, true, "§e" + spell.name, "§aLevel: " + spell.level));
             else
-            	inv.setItem(row + 1, menuItem(Material.PAPER, "fsp:scroll", true, "§e" + spell.name, "§aLevel: " + spell.level));
+            	inv.setItem(row + 1, menuItem(Material.PAPER, "fsp:scroll", true, "§e" + spell.name, "§aLevel: " + spell.level, "§7" + Util.wrapText(spell.description, 20)));
             //inv.setItem(row + 1, menuItem(Material.EXPERIENCE_BOTTLE, null, "§aLevel: " + spell.level));
-            inv.setItem(row + 2, menuItem(Material.PAPER, null, "§bReq: " + spell.requirement));
+            inv.setItem(row + 2, menuItem(Material.PAPER, null, "§bRequirements:", "§b" + Util.wrapText(spell.requirement, 20)));
             inv.setItem(row + 3, menuItem(Material.GOLD_INGOT, null, "§6Cost: " + spell.cost));
-            inv.setItem(row + 4, menuItem(Material.WRITABLE_BOOK, null, "§7" + spell.description));
             if (isPrepared) {
-                inv.setItem(row + 5, menuItem(Material.REDSTONE_TORCH, null, "§dClick Combo: " + Spell.getClickCombination(preparedIndex, prepared.size())));
+                inv.setItem(row + 5, menuItem(Material.REDSTONE_TORCH, null, true, "§dClick Combo: " + Spell.getClickCombination(preparedIndex, prepared.size())));
             } else {
                 inv.setItem(row + 5, menuItem(Material.LIGHT_GRAY_STAINED_GLASS_PANE, null, "§7Not Prepared"));
             }
             inv.setItem(row + 6, menuItem(
-                    isPrepared ? Material.GREEN_WOOL : Material.BLACK_WOOL, null,
+                    isPrepared ? Material.LIME_WOOL : Material.BLACK_WOOL, null, isPrepared,
                     isPrepared ? "§aPrepared" : "§7Not Prepared",
                     "Click to toggle"));
-            inv.setItem(row + 7, menuItem(Material.ARROW, null, "§eMove Up"));
-            inv.setItem(row + 8, menuItem(Material.ARROW, null, "§eMove Down"));
+            inv.setItem(row + 7, menuItem(Material.ARROW, "fsp:up_arrow", "§eMove Up"));
+            inv.setItem(row + 8, menuItem(Material.ARROW, "fsp:down_arrow", "§eMove Down"));
         }
 
         // Pagination controls in bottom row

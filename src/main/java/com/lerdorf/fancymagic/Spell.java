@@ -60,7 +60,7 @@ public class Spell {
 			}},
 			1,
 			null, // hotbar requirements
-			new Material[] {Material.COAL}, // inventory requirements
+			new Material[] {Material.COAL, Material.CHARCOAL}, // inventory requirements
 			"Launches a bolt of fire at your target."
 			);
 	public static final SpellType FIRE_BARRAGE = new SpellType(
@@ -584,13 +584,57 @@ public class Spell {
 			    .withDirectEntity(le) // the entity causing the damage
 			    .build();
 		
+		if (data.hotbarRequirements != null && le instanceof Player player) {
+			boolean hasMaterial = false;
+			String req = "";
+			for (Material mat : data.hotbarRequirements) {
+				if (hasMaterial) break;
+				for (int i = 0; i < 9; i++) {
+					if (hasMaterial) break;
+					ItemStack component = player.getInventory().getItem(i);
+					if (component.getType() == mat) {
+						hasMaterial = true;
+						break;
+					}
+				}
+				if (req.length() > 1) req += ", ";
+				req += mat.toString().toLowerCase().replace('_', ' ');
+			}
+			if (!hasMaterial) {
+				player.sendMessage(ChatColor.RED + "Error: Missing required component in hotbar: " + req);
+				success = false;
+				return 20;
+			}
+		}
+		if (data.inventoryRequirements != null && le instanceof Player player) {
+			boolean hasMaterial = false;
+			String req = "";
+			for (Material mat : data.hotbarRequirements) {
+				if (hasMaterial) break;
+				for (ItemStack component : player.getInventory().getContents()) {
+					if (hasMaterial) break;
+					if (component.getType() == mat) {
+						hasMaterial = true;
+						break;
+					}
+				}
+				if (req.length() > 1) req += ", ";
+				req += mat.toString().toLowerCase().replace('_', ' ');
+			}
+			if (!hasMaterial) {
+				player.sendMessage(ChatColor.RED + "Error: Missing required component in inventory: " + req);
+				success = false;
+				return 20;
+			}
+		}
+		
 //shootLaser(LivingEntity mob, Location loc, Vector step, FancyParticle particle, double range, boolean hitscan, double radius, boolean pierceBlocks, boolean pierceEntity, BiConsumer<Location, Entity> hitEntity, BiConsumer<Location, Block> hitBlock)shootLaser(LivingEntity mob, Location loc, Vector step, FancyParticle particle, double range, boolean hitscan, double radius, boolean pierceBlocks, boolean pierceEntity, BiConsumer<Location, Entity> hitEntity, BiConsumer<Location, Block> hitBlock)
 //laserTick(Collection<LivingEntity> nearbyEntities, int tick, LivingEntity mob, Location loc, Vector step, FancyParticle particle, double range, boolean hitscan, double radius, boolean pierceBlocks, boolean pierceEntity, BiConsumer<Location, LivingEntity> hitEntity, BiConsumer<Location, Block> hitBlock)
 		switch (data.name) {
 			case "Firebolt":
 			{
 				success = true;
-				cooldown = 30;
+				cooldown = 20;
 				le.getWorld().playSound(le, Sound.ENTITY_BLAZE_SHOOT, 1, 2);
 				Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.2f);
 				FancyParticle particle = new FancyParticle(Particle.FLAME, 1, 0, 0, 0, 0);
@@ -626,7 +670,7 @@ public class Spell {
 			case "Fire Barrage":
 			{
 				success = true;
-				cooldown = 120;
+				cooldown = 100;
 				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
 				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
 				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
@@ -734,22 +778,24 @@ public class Spell {
 			}
 			case "Fireball":
 			{
+				success = true;
+				cooldown = 40;
 				Fireball fb = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation().getDirection()), Fireball.class);
 				fb.setFireTicks((int)(20*lvl));
 				fb.setIsIncendiary(true);
-				fb.setYield(1+lvl*0.5f);
+				fb.setYield(0.8f+lvl*0.5f);
 				fb.setShooter(le);
 				Vector vel = le.getEyeLocation().getDirection().multiply(lvl);
 				float range = 30*rangeMod;
 				fb.setVelocity(vel);
-				EntityKiller k = new EntityKiller(fb, (int)(30/vel.length()));
+				EntityKiller k = new EntityKiller(fb, (int)(range/vel.length()));
 				le.getWorld().playSound(le.getEyeLocation(), Sound.ENTITY_GHAST_SHOOT, 1f, 1f);
 				break;
 			}
 			case "Explosion":
 			{
 				success = true;
-				cooldown = 30;
+				cooldown = 40;
 				le.getWorld().playSound(le, Sound.ENTITY_TNT_PRIMED, 1, 1.5f);
 				le.getWorld().playSound(le, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1, 0.8f);
 				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
@@ -821,17 +867,132 @@ public class Spell {
 				break;
 			}
 			case "Fire Shield":
+			{
+				success = true;
+				cooldown = 80;
+				
+				int duration = (int)(40 + 20*lvl);
+				le.addScoreboardTag("fire_sphere");
+				int ticks = (int)(10 + 10*lvl);
+				
+				String ticksTag = "fire_shield_ticks:" + ticks;
+				le.addScoreboardTag(ticksTag);
+				
+				SpellManager.addSpell(this, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
+						(loc, tick) -> {
+							if (tick <= duration) {
+								spawnParticleSphere(le, 1.5, 200, Particle.SMALL_FLAME);
+								return true;
+							} else {
+								le.removeScoreboardTag("fire_sphere");
+								le.removeScoreboardTag(ticksTag);
+								return false;
+							}
+						});
+				
+				
 				break;
+			}
 			case "Fire Resistance":
+			{
 				success = true;
 				cooldown = 100;
 				le.getWorld().playSound(le, Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1, 0.6f);
 				FancyParticle.spawn(Particle.DUST, le.getLocation().add(0, 1, 0), 20, 0.2, 0.2, 0.2, 0.1, new DustOptions(Color.ORANGE,1f));
 				le.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, (int)(20 + 20*lvl), 0, false, true));
 				break;
+			}
 			case "Blade Singer":
+			{
+				List<ItemStack> swords = new ArrayList<ItemStack>();
+				List<Integer> swordSlot = new ArrayList<Integer>();
+				if (le instanceof Player player) {
+					for (int i = 0; i < 9; i++) {
+						ItemStack swordQuestionMark = player.getInventory().getItem(i);
+						if (swordQuestionMark != null && swordQuestionMark.getType().toString().toLowerCase().contains("sword") && !(swordQuestionMark.getItemMeta().hasItemModel() && swordQuestionMark.getItemMeta().getItemModel().asString().contains("fsp"))) {
+							swords.add(swordQuestionMark);
+							swordSlot.add(i);
+							if (swords.size() > lvl)
+								break;
+						}
+					}
+				}
+				
+				if (swords.size() < 1) {
+					success = false;
+					if (le instanceof Player p)
+						p.sendMessage(ChatColor.RED + "Must have a sword in your hotbar");
+					return 20;
+				}
+				
+				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
+						.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
+		
+				// Convert to AxisAngle
+				AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+		
+				//Vector offset = new Vector(0, -0.2f, 0);
+				//float rightOffset = 0.2f;
+				int duration = (int)Math.round(40 + 40*lvl);
+				float offset = 1.7f * rangeMod;
+				ItemDisplay[] disp = new ItemDisplay[swords.size()];
+				Location eyeloc = le.getEyeLocation();
+				
+				for (int i = 0; i < disp.length; i++) {
+					double angle = 2*Math.PI*i/disp.length;
+					final int a = i;
+					disp[i] = eyeloc.getWorld().spawn(eyeloc.clone().add(offset*Math.cos(angle), 0, offset*Math.sin(angle)).setRotation((float)Math.toDegrees(angle), (float)(Math.random()*20)-10),
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(swords.get(a).clone());
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+			
+							});
+				}
+				
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation(), offset * 5, offset * 5, offset *5,
+						entity -> !entity.equals(le));
+				
+				
+				SpellManager.addSpell(this, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
+						(loc, tick) -> {
+							if (tick <= duration) {
+								for (int i = 0; i < disp.length; i++) {
+									double angle = tick*0.35 + 2*Math.PI*i/disp.length;
+									Vector displace = new Vector(offset*Math.cos(angle), 0, offset*Math.sin(angle));
+									Location point = raycastForBlocks(le.getEyeLocation(), displace);
+									disp[i].teleport(point.setRotation((float)Math.toDegrees(angle), disp[i].getPitch()));
+									for (LivingEntity entity : nearbyEntities) {
+										if (isEntityWithinRadiusOfLine(le.getEyeLocation(), point, entity, 0.5f)) {
+											entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_PLAYER_ATTACK_CRIT, 1, 1);
+											entity.getWorld().spawnParticle(Particle.SWEEP_ATTACK, entity.getLocation(), 1, 0, 0, 0, 0);
+											
+											entity.damage(Util.getAttackDamage(disp[i].getItemStack()), source);
+											
+											entity.setVelocity(entity.getVelocity().add(displace.clone().normalize().multiply(0.9)));
+										}
+									}
+								}
+								return true;
+							} else {
+								for (int i = 0; i < disp.length; i++) {
+									le.getWorld().spawnParticle(Particle.CLOUD, disp[i].getLocation(), 5, 0.05, 0.05, 0.05, 0.05);
+									disp[i].remove();
+								}
+								return false;
+							}
+						});
+				
 				break;
+			}
 			case "Misty Step":
+				success = true;
+				cooldown = 20;
+				
+				Vector vel = le.getVelocity();
+				
 				break;
 			case "Dimension Door":
 				break;
@@ -1267,6 +1428,23 @@ public class Spell {
 		
 		return (int)Math.max(cooldown * cooldownMod, 1);
 		
+	}
+	
+	private static void spawnParticleSphere(LivingEntity e, double radius, int density, Particle particle) {
+		// TODO Auto-generated method stub
+		Location center = e.getLocation().add(0, 1, 0); // Center at chest height
+
+	    for (int i = 0; i < density; i++) {
+	        double theta = Math.random() * 2 * Math.PI;  // Angle around the Y axis
+	        double phi = Math.acos(2 * Math.random() - 1); // Angle from the vertical axis
+
+	        double x = radius * Math.sin(phi) * Math.cos(theta);
+	        double y = radius * Math.cos(phi);
+	        double z = radius * Math.sin(phi) * Math.sin(theta);
+
+	        Location particleLocation = center.clone().add(x, y, z);
+	        e.getWorld().spawnParticle(particle, particleLocation, 0);
+	    }
 	}
 
 	int lifetime = 1000;

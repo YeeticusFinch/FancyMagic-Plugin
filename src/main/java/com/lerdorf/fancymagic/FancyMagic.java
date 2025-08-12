@@ -27,6 +27,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.craftbukkit.block.impl.CraftLectern;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Creeper;
@@ -334,8 +335,25 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     public void entityDamageByEntity(EntityDamageByEntityEvent event) {
     	if (event.getDamager() instanceof Player p && event.getDamageSource().getDamageType() == DamageType.PLAYER_ATTACK) {
 	    	boolean cancelEvent = use(p, false);
-	    	if (cancelEvent)
+	    	if (cancelEvent) {
 	    		event.setCancelled(true);
+	    		return;
+	    	}
+    	}
+    	if (event.getEntity().getScoreboardTags().contains("fire_shield") && event.getDamager().getLocation().distance(event.getEntity().getLocation()) < 6) {
+    		for (String tag : event.getEntity().getScoreboardTags()) {
+    			if (tag.contains("fire_shield_ticks:")) {
+    				int ticks = Integer.parseInt(tag.substring(tag.indexOf(':')+1));
+    				if (event.getDamager() instanceof LivingEntity le) {
+    					DamageSource source = DamageSource.builder(DamageType.MAGIC)
+    						    .withDirectEntity(event.getEntity()) // the entity causing the damage
+    						    .build();
+    					le.damage(ticks*0.1f, source);
+        				le.setFireTicks(ticks);
+    				}
+    				break;
+    			}
+    		}
     	}
     }
     
