@@ -21,11 +21,13 @@ import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Fireball;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.ItemDisplay.ItemDisplayTransform;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -38,6 +40,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import net.kyori.adventure.key.Namespaced;
+import net.md_5.bungee.api.ChatColor;
 
 public class Spell {
 
@@ -569,6 +572,13 @@ public class Spell {
 		
 		boolean success = false;
 		
+		if (item.getItemMeta() instanceof Damageable dmg) {
+			if (dmg.getMaxDamage()-dmg.getDamage() > (int)(data.cost + lvl-1)) {
+				if (le instanceof Player player)
+					player.sendActionBar(ChatColor.RED + "Not enough durability");
+				return 20;
+			}
+		}
 
 		DamageSource source = DamageSource.builder(DamageType.MAGIC)
 			    .withDirectEntity(le) // the entity causing the damage
@@ -723,7 +733,19 @@ public class Spell {
 				break;
 			}
 			case "Fireball":
+			{
+				Fireball fb = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation().getDirection()), Fireball.class);
+				fb.setFireTicks((int)(20*lvl));
+				fb.setIsIncendiary(true);
+				fb.setYield(1+lvl*0.5f);
+				fb.setShooter(le);
+				Vector vel = le.getEyeLocation().getDirection().multiply(lvl);
+				float range = 30*rangeMod;
+				fb.setVelocity(vel);
+				EntityKiller k = new EntityKiller(fb, (int)(30/vel.length()));
+				le.getWorld().playSound(le.getEyeLocation(), Sound.ENTITY_GHAST_SHOOT, 1f, 1f);
 				break;
+			}
 			case "Explosion":
 			{
 				success = true;

@@ -21,6 +21,18 @@ public class SpellManager {
         mainLoop = new BukkitRunnable() {
             @Override
             public void run() {
+            	
+                // Update EntityKiller
+            		if (EntityKiller.killers == null)
+            			return;
+            		for (Iterator<EntityKiller> ik = EntityKiller.killers.iterator(); ik.hasNext(); ) {
+            			EntityKiller k = ik.next();
+            			k.update();
+            			if (k.dead)
+            				EntityKiller.killers.remove(k);
+            		}
+            	
+            	
                 // Update all spells in one loop
                 Iterator<ActiveSpell> iterator = activeSpells.iterator();
                 while (iterator.hasNext()) {
