@@ -33,8 +33,8 @@ import java.util.List;
 
 public class SpellBookMenu implements Listener {
 
-    private final NamespacedKey PREPARED_KEY;
-    private final FancyMagic plugin;
+    private static NamespacedKey PREPARED_KEY;
+    private static FancyMagic plugin;
 
     public SpellBookMenu(FancyMagic plugin) {
         this.plugin = plugin;
@@ -415,7 +415,7 @@ public class SpellBookMenu implements Listener {
         return spells;
     }
 
-    public List<SpellData> loadPreparedSpells(ItemStack book) {
+    public static List<SpellData> loadPreparedSpells(ItemStack book) {
         List<SpellData> prepared = new ArrayList<>();
 
         if (book == null || !book.hasItemMeta()) {
@@ -449,6 +449,7 @@ public class SpellBookMenu implements Listener {
         if (prepared.isEmpty()) {
             lore.add("§7None");
         } else {
+        	int c = 0;
             for (SpellData spell : prepared) {
                 lore.add("§a" + spell.name + " §7(Lv " + spell.level + ")");
             }
@@ -482,10 +483,12 @@ public class SpellBookMenu implements Listener {
         if (preparedSpells.isEmpty()) {
             lore.add("§7None");
         } else {
+        	int c = 0;
             for (SpellData spell : preparedSpells) {
                 lore.add("§a" + spell.name + " §7(Lv. " + spell.level + ")");
                 lore.add("§8- Req: §f" + spell.requirement);
-                lore.add("§8- Cost: §f" + spell.cost);
+                lore.add("§8- Combo: §f" + Spell.getClickCombination(c, preparedSpells.size()));
+                c++;
             }
         }
         meta.setLore(lore);

@@ -1626,9 +1626,58 @@ public class Spell {
 				break;
 			}
 			case "Chain Lightning":
+			{
+				success = true;
+				cooldown = 70;
+				//le.getWorld().playSound(le, Sound., 1, 2);
+				//Util.playCustomSound(net.kyori.adventure.sound.Sound.sound(Key.key("fsp:laser"), Source.HOSTILE, 1.0f, 1.0f), le.getEyeLocation().add(le.getEyeLocation().getDirection()));
+				le.getWorld().playSound(le, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1, 1);
+				
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.4);
+				FancyParticle particle = new FancyParticle(Particle.END_ROD, 1, 0, 0, 0, 0);
+				float range = (30+lvl*4)*rangeMod;
+				
+				le.getWorld().spawnParticle(Particle.FLASH, le.getEyeLocation().add(le.getEyeLocation().getDirection()), 1, 0, 0, 0, 0);
+				
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				
+				laserTick(nearbyEntities, 0, le, le.getEyeLocation(), vel, particle, range, true, 0.4, false, false, 
+						(point, entity) -> {
+							//entity.damage(5+lvl, le);
+							//entity.damage(4+lvl*2, source);
+							point.getWorld().spawnParticle(Particle.FLASH, point, 5, 0, 0, 0, 0);
+							
+							//entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+							//entity.setFireTicks((int)(5+lvl*5));
+							LightningStrike lightning = point.getWorld().strikeLightning(point);
+				            lightning.setMetadata("lightningOwner", new FixedMetadataValue(FancyMagic.plugin, le));
+				            lightning.setMetadata("damage", new FixedMetadataValue(FancyMagic.plugin, 5+lvl*2.4f));
+				            
+				            chainLightning(point, lvl*0.6f, le);
+						},
+						(point, block) -> {
+							
+							LightningStrike lightning = point.getWorld().strikeLightning(point);
+				            lightning.setMetadata("lightningOwner", new FixedMetadataValue(FancyMagic.plugin, le));
+				            lightning.setMetadata("damage", new FixedMetadataValue(FancyMagic.plugin, 5+lvl*2.4f));
+				            chainLightning(point, lvl*0.6f, le);
+						}
+						);
+				
 				break;
+			}
 			case "Chronal Shift":
-				break;
+				{
+					if (le instanceof Player player && SpellManager.playerStates.containsKey(player)) {
+						success = true;
+						cooldown = 70;
+						player.getWorld().playSound(player.getLocation(), Sound.ENTITY_PLAYER_TELEPORT, 1, 1.5f);
+						SpellManager.chronalShift(player, lvl);
+					}
+					break;
+				}
 			case "Transmute Water":
 				break;
 			case "Transmute Snow":
@@ -1666,6 +1715,36 @@ public class Spell {
 		
 	}
 	
+	public static void particleLine(FancyParticle particle, Location l1, Location l2, float step) {
+		double dist = l1.distance(l2);
+		int steps = (int)Math.round(dist/step);
+		Vector dir = l1.clone().subtract(l2).toVector().normalize().multiply(step);
+		for (int i = 0; i < steps; i++) {
+			particle.spawn(l1.clone().add(dir));
+		}
+	}
+	
+	private void chainLightning(Location point, float lvl, LivingEntity owner) {
+		float range = 10 + 2*lvl;
+		Collection<LivingEntity> nearbyEntities = point.getWorld().getNearbyLivingEntities(
+				point, range, range, range,
+				entity -> !entity.equals(owner));
+		for (LivingEntity le : nearbyEntities) {
+			if (le.hasLineOfSight(point)) {
+				particleLine(new FancyParticle(Particle.END_ROD, 1, 0, 0, 0, 0), point, le.getLocation().add(0, le.getHeight()/2, 0), 0.3f);
+				LightningStrike lightning = point.getWorld().strikeLightning(le.getLocation());
+	            lightning.setMetadata("lightningOwner", new FixedMetadataValue(FancyMagic.plugin, owner));
+	            lightning.setMetadata("damage", new FixedMetadataValue(FancyMagic.plugin, 4+lvl*2));
+	            if (lvl > 1.7f) {
+	            	chainLightning(le.getLocation(), lvl*0.6f, owner);
+	            }
+	            lvl--;
+			}
+			if (lvl < 0)
+				return;
+		}
+	}
+
 	private void setupEquipment(LivingEntity le, float power) {
 	    // Clamp power between 0 and 5
 	    power = Math.max(0, Math.min(5, power));

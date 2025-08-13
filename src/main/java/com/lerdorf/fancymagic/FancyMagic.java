@@ -45,10 +45,13 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -514,5 +517,53 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
             }
         }
     }
+    
+    @EventHandler
+    public void onSwapToOffhand(PlayerSwapHandItemsEvent event) {
+        // Called when player presses F
+        ItemStack newOffhand = event.getOffHandItem();
+        handleOffhandChange(event.getPlayer(), newOffhand);
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+
+        // Only care about the player's own inventory
+        if (event.getClickedInventory() == null) return;
+
+        // Case: clicking directly on the offhand slot
+        if (event.getSlotType() == InventoryType.SlotType.QUICKBAR && event.getSlot() == 40) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                ItemStack newOffhand = player.getInventory().getItemInOffHand();
+                handleOffhandChange(player, newOffhand);
+            }, 1L);
+        }
+
+        // Case: shift-click into offhand (Bukkit doesn't fire a separate event, so we delay and check)
+        if (event.isShiftClick()) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                ItemStack newOffhand = player.getInventory().getItemInOffHand();
+                handleOffhandChange(player, newOffhand);
+            }, 1L);
+        }
+    }
+    /**
+     * Called whenever a player's offhand item changes.
+     */
+    private void handleOffhandChange(Player player, ItemStack newOffhand) {
+        // You can now run your logic here
+        //player.sendMessage("New offhand: " + (newOffhand == null ? "empty" : newOffhand.getType().name()));
+        
+        if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
+        	List<SpellData> prepared = SpellBookMenu.loadPreparedSpells(player.getEquipment().getItemInOffHand()); 
+        	for (SpellData spell : prepared) {
+        		if (spell.name.equalsIgnoreCase("Chronal Shift")) {
+        			SpellManager.trackPlayerState(player);
+        		}
+        	}
+        }
+    }
+
 
 }
