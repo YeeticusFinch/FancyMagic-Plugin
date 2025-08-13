@@ -19,6 +19,9 @@ public class EntityKiller {
 		this.ticks = ticks;
 		this.entity = entity;
 		killers.add(this);
+		if (SpellManager.mainLoop == null) {
+           SpellManager.startMainLoop();
+        }
 	}
 	
 	public void update() {

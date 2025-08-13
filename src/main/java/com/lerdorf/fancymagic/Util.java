@@ -116,4 +116,71 @@ public class Util {
 	        default -> 1; // fists or unknown items
 	    };
 	}
+
+	public static Location getSafeTeleport(Location point, double range) {
+		
+		if (isSafe(point)) {
+			return point;
+		}
+		
+		double dist = 100000;
+		Location closestPoint = null;
+		
+		for (int x = 0; x < Math.ceil(range); x++) {
+			for (int z = 0; z < Math.ceil(range); z++) {
+				for (int y = 0; y < Math.ceil(range); y++) {
+					if (isSafe(point.clone().add(x, y, z))) {
+						Location newPoint = point.clone().add(x, y, z);
+						double newDist = Math.pow(x-point.getX(),2) + Math.pow(z-point.getZ(),2) ;
+						if (closestPoint == null || newDist < dist) {
+							dist = newDist;
+							closestPoint = newPoint;
+							if (dist < 1.5f) {
+								return closestPoint;
+							}
+						}
+					}
+					if (isSafe(point.clone().add(-x, y, z))) {
+						Location newPoint = point.clone().add(-x, y, z);
+						double newDist = Math.pow(newPoint.getX()-point.getX(),2) + Math.pow(newPoint.getZ()-point.getZ(),2) ;
+						if (closestPoint == null || newDist < dist) {
+							dist = newDist;
+							closestPoint = newPoint;
+							if (dist < 1.5f) {
+								return closestPoint;
+							}
+						}
+					}
+					if (isSafe(point.clone().add(x, y, -z))) {
+						Location newPoint = point.clone().add(x, y, -z);
+						double newDist = Math.pow(newPoint.getX()-point.getX(),2) + Math.pow(newPoint.getZ()-point.getZ(),2) ;
+						if (closestPoint == null || newDist < dist) {
+							dist = newDist;
+							closestPoint = newPoint;
+							if (dist < 1.5f) {
+								return closestPoint;
+							}
+						}
+					}
+					if (isSafe(point.clone().add(-x, y, -z))) {
+						Location newPoint = point.clone().add(-x, y, -z);
+						double newDist = Math.pow(newPoint.getX()-point.getX(),2) + Math.pow(newPoint.getZ()-point.getZ(),2) ;
+						if (closestPoint == null || newDist < dist) {
+							dist = newDist;
+							closestPoint = newPoint;
+							if (dist < 1.5f) {
+								return closestPoint;
+							}
+						}
+					}
+				}
+			}
+		}
+		return closestPoint != null ? closestPoint : point;
+		
+	}
+	
+	public static boolean isSafe(Location point) {
+		return point.getBlock().isPassable() && point.clone().add(0, 1, 0).getBlock().isPassable();
+	}
 }

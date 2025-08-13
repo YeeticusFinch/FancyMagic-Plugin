@@ -3,6 +3,7 @@ package com.lerdorf.fancymagic;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Sound;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Player;
@@ -22,6 +23,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import de.tr7zw.nbtapi.NBTItem;
+import net.md_5.bungee.api.ChatColor;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -89,11 +91,11 @@ public class SpellBookMenu implements Listener {
 
             Spell actualSpell = spell.toSpell();
             if (actualSpell.data.hotbarRequirements != null && actualSpell.data.hotbarRequirements.length > 0)
-            	inv.setItem(row + 1, menuItem(actualSpell.data.hotbarRequirements[0], null, true, "§e" + spell.name, "§aLevel: " + spell.level));
+            	inv.setItem(row + 1, menuItem(actualSpell.data.hotbarRequirements[0], null, true, "§e" + spell.name, "§aLevel: " + spell.level + (spell.progress > 0 ? (ChatColor.GRAY + " " + spell.progress + "/" + spell.level) : ""), "§7" + Util.wrapText(spell.description, 20)));
             else if (actualSpell.data.inventoryRequirements != null && actualSpell.data.inventoryRequirements.length > 0)
-            	inv.setItem(row + 1, menuItem(actualSpell.data.inventoryRequirements[0], null, true, "§e" + spell.name, "§aLevel: " + spell.level));
+            	inv.setItem(row + 1, menuItem(actualSpell.data.inventoryRequirements[0], null, true, "§e" + spell.name, "§aLevel: " + spell.level + (spell.progress > 0 ? (ChatColor.GRAY + " " + spell.progress + "/" + spell.level) : ""), "§7" + Util.wrapText(spell.description, 20)));
             else
-            	inv.setItem(row + 1, menuItem(Material.PAPER, "fsp:scroll", true, "§e" + spell.name, "§aLevel: " + spell.level, "§7" + Util.wrapText(spell.description, 20)));
+            	inv.setItem(row + 1, menuItem(Material.PAPER, "fsp:scroll", true, "§e" + spell.name, "§aLevel: " + spell.level + (spell.progress > 0 ? (ChatColor.GRAY + " " + spell.progress + "/" + spell.level) : ""), "§7" + Util.wrapText(spell.description, 20)));
             //inv.setItem(row + 1, menuItem(Material.EXPERIENCE_BOTTLE, null, "§aLevel: " + spell.level));
             inv.setItem(row + 2, menuItem(Material.PAPER, null, "§bRequirements:", "§b" + Util.wrapText(spell.requirement, 20)));
             inv.setItem(row + 3, menuItem(Material.GOLD_INGOT, null, "§6Cost: " + spell.cost));
@@ -176,6 +178,7 @@ public class SpellBookMenu implements Listener {
 
                     if (bookInLectern == null || bookInLectern.getType() == Material.AIR) {
                         player.sendMessage("§cThe lectern is empty.");
+                        player.playSound(player, Sound.ENTITY_ITEM_BREAK, 1, 0.5f);
                         return;
                     }
 
@@ -225,17 +228,32 @@ public class SpellBookMenu implements Listener {
             }
             
             if (slot == 22) {
+                ItemStack spellBook = getMetaSpellBook(player);
+                List<SpellData> prepared = loadPreparedSpells(spellBook);
                 e.setCancelled(true); // Always cancel the "Add Spell" button
                 ItemStack scroll = e.getInventory().getItem(13);
-                if (scroll != null) {
+                while (scroll != null && scroll.getAmount() > 0) {
+                	player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
                     addSpell(getMetaSpellBook(player), scroll);
                     player.sendMessage("§aSpell added!");
-                    e.getInventory().setItem(13, null); // Remove the scroll after adding
+                    //e.getInventory().setItem(13, null); // Remove the scroll after adding
+                    scroll.setAmount(scroll.getAmount()-1);
                 }
+                List<SpellData> spells = loadSpells(spellBook);
+                List<SpellData> newPrepared = new ArrayList<SpellData>();
+                for (SpellData spell : spells) {
+                	boolean isPrepared = prepared.stream().anyMatch(s -> s.name.equals(spell.name));
+                	if (isPrepared)
+                		newPrepared.add(spell);
+                }
+                prepared = newPrepared;
+                savePreparedSpells(spellBook, prepared);
+                updateSpellBookLore(spellBook, prepared);
             }
             if (slot == 26) {
                 e.setCancelled(true);
                 openMainMenu(player, getMetaSpellBook(player));
+                player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
             }
         }
 
@@ -249,6 +267,7 @@ public class SpellBookMenu implements Listener {
 
             if (e.getCurrentItem().getType() == Material.BARRIER) {
                 openMainMenu(player, spellBook);
+                player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 0.6f);
                 return;
             }
 
@@ -264,6 +283,7 @@ public class SpellBookMenu implements Listener {
                     if (currentPage > 0) {
                         openPrepareSpellsMenu(player, spellBook, currentPage - 1);
                     }
+                    player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1.5f);
                     return;
                 } else if (clickedName.equalsIgnoreCase("Next Page")) {
                     // Calculate max page correctly - 5 spells per page
@@ -271,6 +291,7 @@ public class SpellBookMenu implements Listener {
                     if (currentPage < totalPages - 1) {
                         openPrepareSpellsMenu(player, spellBook, currentPage + 1);
                     }
+                    player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1.5f);
                     return;
                 }
             }
@@ -286,6 +307,7 @@ public class SpellBookMenu implements Listener {
                 } else {
                 	if (prepared.size() >= 8) {
                         player.sendMessage("§cYou can only prepare up to 8 spells!");
+                        player.playSound(player, Sound.ENTITY_ITEM_BREAK, 1, 0.6f);
                         return;
                     }
                     prepared.add(targetSpell);
@@ -318,6 +340,7 @@ public class SpellBookMenu implements Listener {
                 savePreparedSpells(spellBook, prepared);
                 openPrepareSpellsMenu(player, spellBook, player.hasMetadata("spellbook_page") ? player.getMetadata("spellbook_page").get(0).asInt() : 0);
             }
+            player.playSound(player, Sound.UI_BUTTON_CLICK, 1, 1);
         }
     }
 
@@ -328,12 +351,32 @@ public class SpellBookMenu implements Listener {
     private ItemStack menuItem(Material mat, String itemModel, boolean enchantGlint, String name, String... lore) {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
+
         if (enchantGlint)
-        	meta.setEnchantmentGlintOverride(true);
+            meta.setEnchantmentGlintOverride(true);
         if (itemModel != null)
-        	meta.setItemModel(NamespacedKey.fromString(itemModel));
+            meta.setItemModel(NamespacedKey.fromString(itemModel));
+
         meta.setDisplayName(name);
-        if (lore.length > 0) meta.setLore(List.of(lore));
+
+        if (lore.length > 0) {
+            List<String> processedLore = new ArrayList<>();
+            for (String line : lore) {
+                // Split on \n and preserve order
+                String[] splitLines = line.split("\\n");
+                String color = "";
+                if (splitLines.length > 0) {
+                	if (splitLines[0].charAt(0) == '§') {
+                		color = splitLines[0].substring(0, 2);
+                	}
+                }
+                for (String split : splitLines) {
+                    processedLore.add(color + split);
+                }
+            }
+            meta.setLore(processedLore);
+        }
+
         item.setItemMeta(meta);
         return item;
     }
@@ -463,16 +506,18 @@ public class SpellBookMenu implements Listener {
     public static class SpellData {
         String name;
         int level;
+        int progress;
         String requirement;
         int cost;
         String description;
         
-        SpellData(String name, int level, String requirement, int cost, String description) {
+        SpellData(String name, int level, String requirement, int cost, int progress, String description) {
         	this.name = name;
         	this.level = level;
         	this.requirement = requirement;
         	this.cost = cost;
         	this.description = description;
+        	this.progress = progress;
         }
 
         static SpellData fromJson(String json) {
@@ -495,12 +540,12 @@ public class SpellBookMenu implements Listener {
         static SpellData fromPage(String page) {
         	Spell spell = Items.spellFromPage(page);
         	String requirement = Items.requirementsString(spell.data);
-        	return new SpellData(spell.data.name, spell.level, requirement, spell.data.cost, spell.data.description);
+        	return new SpellData(spell.data.name, spell.level, requirement, spell.data.cost, spell.partialLevel, spell.data.description);
         }
         
         Spell toSpell() {
         	SpellType type = Spell.getSpellType(name);
-        	return new Spell(type, level, 0);
+        	return new Spell(type, level, progress);
         }
     }
     

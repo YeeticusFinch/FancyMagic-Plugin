@@ -35,12 +35,14 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -79,6 +81,8 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 
 	private File configFile;
 	private Map<String, Object> configValues;
+	
+	public static Map<UUID, List<LivingEntity>> minions = new HashMap<>();
 
 	public static Plugin plugin;
 
@@ -209,7 +213,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     	if (item != null) {
     		ItemMeta meta = item.getItemMeta();
     		if (meta != null && meta.getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) && meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
-    			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
+    			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
     				if (clicks.containsKey(player) && System.currentTimeMillis() - lastClick.get(player) <= 5) {
         				// Clicked too fast, probably the same click
     					lastClick.put(player, System.currentTimeMillis());
@@ -345,16 +349,47 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     			if (tag.contains("fire_shield_ticks:")) {
     				int ticks = Integer.parseInt(tag.substring(tag.indexOf(':')+1));
     				if (event.getDamager() instanceof LivingEntity le) {
-    					DamageSource source = DamageSource.builder(DamageType.MAGIC)
-    						    .withDirectEntity(event.getEntity()) // the entity causing the damage
-    						    .build();
-    					le.damage(ticks*0.1f, source);
-        				le.setFireTicks(ticks);
+    					Bukkit.getScheduler().runTaskLater(plugin, () -> {
+    						DamageSource source = DamageSource.builder(DamageType.MAGIC)
+        						    .withDirectEntity(event.getEntity()) // the entity causing the damage
+        						    .build();
+        					le.damage(ticks*0.1f, source);
+        					le.setVelocity(le.getVelocity().add(le.getLocation().subtract(event.getEntity().getLocation()).toVector().normalize().multiply(0.8).add(new Vector(0, 0.5f, 0))));
+            				le.setFireTicks(ticks);
+						}, 2);
+    					
+        				event.setDamage(event.getDamage()/2);
     				}
     				break;
     			}
     		}
     	}
+    	if (event.getEntity() instanceof LivingEntity victim) {
+            UUID victimId = victim.getUniqueId();
+            if (minions.containsKey(victimId)) {
+                // Summoner was attacked
+                Entity damager = event.getDamager();
+                if (damager instanceof LivingEntity attacker) {
+                    for (LivingEntity minion : minions.get(victimId)) {
+                        if (minion.isValid()) {
+                            ((Mob) minion).setTarget(attacker);
+                        }
+                    }
+                }
+            }
+        }
+    	if (event.getDamager() instanceof LivingEntity attacker) {
+            UUID attackerId = attacker.getUniqueId();
+            if (minions.containsKey(attackerId)) {
+                // Summoner attacked something
+                LivingEntity target = (LivingEntity) event.getEntity();
+                for (LivingEntity minion : minions.get(attackerId)) {
+                    if (minion.isValid()) {
+                        ((Mob) minion).setTarget(target);
+                    }
+                }
+            }
+        }
     }
     
     @EventHandler
@@ -398,6 +433,16 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 	        	inv.setResult(result);
 	        }
     	}
+    }
+    
+    @EventHandler
+    public void preventTargetingOwner(EntityTargetEvent e) {
+        if (e.getEntity() instanceof LivingEntity entity && entity.hasMetadata("owner")) {
+            UUID ownerId = UUID.fromString(entity.getMetadata("owner").get(0).asString());
+            if (e.getTarget() != null && e.getTarget().getUniqueId().equals(ownerId)) {
+                e.setCancelled(true);
+            }
+        }
     }
     
     public static String toRoman(int number) {

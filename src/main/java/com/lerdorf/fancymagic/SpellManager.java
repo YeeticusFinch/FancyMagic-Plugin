@@ -1,10 +1,13 @@
 package com.lerdorf.fancymagic;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
@@ -13,7 +16,8 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 public class SpellManager {
     private static final List<ActiveSpell> activeSpells = new ArrayList<>();
-    private static BukkitRunnable mainLoop;
+    public static BukkitRunnable mainLoop;
+    private static HashMap<Consumer<Integer>, Integer> persistantCalls = new HashMap<>();
     
     public static void startMainLoop() {
         if (mainLoop != null) return;
@@ -23,13 +27,23 @@ public class SpellManager {
             public void run() {
             	
                 // Update EntityKiller
-            		if (EntityKiller.killers == null)
-            			return;
-            		for (Iterator<EntityKiller> ik = EntityKiller.killers.iterator(); ik.hasNext(); ) {
-            			EntityKiller k = ik.next();
-            			k.update();
-            			if (k.dead)
-            				EntityKiller.killers.remove(k);
+            		if (EntityKiller.killers != null) {
+	            		for (Iterator<EntityKiller> ik = EntityKiller.killers.iterator(); ik.hasNext(); ) {
+	            			EntityKiller k = ik.next();
+	            			k.update();
+	            			if (k.dead)
+	            				EntityKiller.killers.remove(k);
+	            		}
+            		}
+            		
+            		Iterator<Map.Entry<Consumer<Integer>, Integer>> it = persistantCalls.entrySet().iterator();
+            		while (it.hasNext()) {
+            		    var entry = it.next();
+            		    int newTime = entry.getValue() - 1;
+            		    entry.setValue(newTime);
+            		    entry.getKey().accept(newTime);
+            		    if (newTime < 0)
+            		        it.remove();
             		}
             	
             	
@@ -43,7 +57,7 @@ public class SpellManager {
                 }
                 
                 // Stop loop when no active spells
-                if (activeSpells.isEmpty()) {
+                if (activeSpells.isEmpty() && EntityKiller.killers.isEmpty() && persistantCalls.isEmpty()) {
                     cancel();
                     mainLoop = null;
                 }
@@ -55,6 +69,13 @@ public class SpellManager {
     public static void addSpell(Spell spell, LivingEntity caster, Location location, ItemStack item, float rangeMod, float cooldownMod, float potencyMod, BiFunction<Location, Integer, Boolean> spellTick) {
         activeSpells.add(new ActiveSpell(spell, caster, location, item, rangeMod, cooldownMod, potencyMod, spellTick));
         if (mainLoop == null) {
+            startMainLoop();
+        }
+    }
+    
+    public static void addPersistantCall(Consumer<Integer> callback, int lifetime) {
+    	persistantCalls.put(callback, lifetime);
+    	if (mainLoop == null) {
             startMainLoop();
         }
     }
