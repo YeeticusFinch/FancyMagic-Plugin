@@ -33,6 +33,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.ItemDisplay.ItemDisplayTransform;
+import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Skeleton;
@@ -1504,13 +1505,30 @@ public class Spell {
 			}
 			case "Raise Dead":
 			{
+				
+				if (FancyMagic.minions.containsKey(le.getUniqueId())) {
+					for (LivingEntity minion : FancyMagic.minions.get(le.getUniqueId())) {
+						if (minion != null && minion.isValid()) {
+							success = false;
+							if (le instanceof Player p) {
+								p.sendMessage(ChatColor.RED + "Minions still active...");
+								p.playSound(p.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 0.5f);
+							}
+							return 20;
+						}
+					}
+				}
+				
+				success = true;
+				cooldown = 100;
+				
 				Location eyeLoc = le.getEyeLocation();
 
 		        List<LivingEntity> summoned = new ArrayList<>();
 		        
 		        float range = 5*rangeMod;
 		        
-		        int numZombies = (int)Math.round(0.2f+lvl*1.5f+Math.random()*2);
+		        int numZombies = (int)Math.round(0.2f+lvl*1.4f+Math.random()*2);
 		        int numSkeletons = (int)Math.round(0.1f+lvl*1.1f+Math.random()*2);
 		        int numWitherSkeletons = (int)Math.round(lvl-2+Math.random()*2);
 		        int numSkeletonJockeys = (int)Math.round(lvl-2+Math.random()*2);
@@ -1520,7 +1538,7 @@ public class Spell {
 		        for (int i = 0; i < numZombies; i++) {
 		        	Location spawnLoc = Util.getSafeTeleport(eyeLoc.add((new Vector(Math.random()-0.5, 0, Math.random()-0.5)).multiply(range)), range*0.75f);
 		            Zombie z = (Zombie) eyeLoc.getWorld().spawnEntity(spawnLoc, EntityType.ZOMBIE);
-		            setupEquipment(z, lvl);
+		            if (Math.random() < lvl*0.2) setupEquipment(z, lvl+(float)Math.random()-0.5f);
 		            setupMinion(z, le);
 		            summoned.add(z);
 		        }
@@ -1528,7 +1546,7 @@ public class Spell {
 		        for (int i = 0; i < numSkeletons; i++) {
 		        	Location spawnLoc = Util.getSafeTeleport(eyeLoc.add((new Vector(Math.random()-0.5, 0, Math.random()-0.5)).multiply(range)), range*0.75f);
 		            Skeleton s = (Skeleton) eyeLoc.getWorld().spawnEntity(spawnLoc, EntityType.SKELETON);
-		            setupEquipment(s, lvl);
+		            if (Math.random() < lvl*0.2) setupEquipment(s, lvl+(float)Math.random()-0.5f);
 		            setupMinion(s, le);
 		            summoned.add(s);
 		        }
@@ -1536,7 +1554,7 @@ public class Spell {
 		        for (int i = 0; i < numWitherSkeletons; i++) {
 		        	Location spawnLoc = Util.getSafeTeleport(eyeLoc.add((new Vector(Math.random()-0.5, 0, Math.random()-0.5)).multiply(range)), range*0.75f);
 		            WitherSkeleton s = (WitherSkeleton) eyeLoc.getWorld().spawnEntity(spawnLoc, EntityType.WITHER_SKELETON);
-		            setupEquipment(s, lvl);
+		            if (Math.random() < lvl*0.2) setupEquipment(s, lvl+(float)Math.random()-0.5f);
 		            setupMinion(s, le);
 		            summoned.add(s);
 		        }
@@ -1545,10 +1563,12 @@ public class Spell {
 		        	Location spawnLoc = Util.getSafeTeleport(eyeLoc.add((new Vector(Math.random()-0.5, 0, Math.random()-0.5)).multiply(range)), range*0.75f);
 		            Skeleton s = (Skeleton) eyeLoc.getWorld().spawnEntity(spawnLoc, EntityType.SKELETON);
 		            SkeletonHorse horse = (SkeletonHorse) eyeLoc.getWorld().spawnEntity(spawnLoc, EntityType.SKELETON_HORSE);
-		            setupEquipment(s, lvl);
+		            if (Math.random() < lvl*0.2) setupEquipment(s, lvl+(float)Math.random()-0.5f);
 		            horse.addPassenger(s);
+		            setupMinion(horse, le);
 		            setupMinion(s, le);
 		            summoned.add(s);
+		            summoned.add(horse);
 		        }
 
 		        FancyMagic.minions.computeIfAbsent(le.getUniqueId(), k -> new ArrayList<>()).addAll(summoned);
@@ -1566,7 +1586,45 @@ public class Spell {
 				break;
 			}
 			case "Lightning":
+			{
+				success = true;
+				cooldown = 40;
+				//le.getWorld().playSound(le, Sound., 1, 2);
+				//Util.playCustomSound(net.kyori.adventure.sound.Sound.sound(Key.key("fsp:laser"), Source.HOSTILE, 1.0f, 1.0f), le.getEyeLocation().add(le.getEyeLocation().getDirection()));
+				le.getWorld().playSound(le, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1, 1);
+				
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.4);
+				FancyParticle particle = new FancyParticle(Particle.ELECTRIC_SPARK, 1, 0, 0, 0, 0);
+				float range = (20+lvl*4)*rangeMod;
+				
+				le.getWorld().spawnParticle(Particle.FLASH, le.getEyeLocation().add(le.getEyeLocation().getDirection()), 1, 0, 0, 0, 0);
+				
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				
+				laserTick(nearbyEntities, 0, le, le.getEyeLocation(), vel, particle, range, true, 0.4, false, false, 
+						(point, entity) -> {
+							//entity.damage(5+lvl, le);
+							//entity.damage(4+lvl*2, source);
+							point.getWorld().spawnParticle(Particle.FLASH, point, 5, 0, 0, 0, 0);
+							
+							//entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+							//entity.setFireTicks((int)(5+lvl*5));
+							LightningStrike lightning = point.getWorld().strikeLightning(point);
+				            lightning.setMetadata("lightningOwner", new FixedMetadataValue(FancyMagic.plugin, le));
+				            lightning.setMetadata("damage", new FixedMetadataValue(FancyMagic.plugin, 4+lvl*2));
+						},
+						(point, block) -> {
+							
+							LightningStrike lightning = point.getWorld().strikeLightning(point);
+				            lightning.setMetadata("lightningOwner", new FixedMetadataValue(FancyMagic.plugin, le));
+				            lightning.setMetadata("damage", new FixedMetadataValue(FancyMagic.plugin, 4+lvl*2));
+						}
+						);
+				
 				break;
+			}
 			case "Chain Lightning":
 				break;
 			case "Chronal Shift":
