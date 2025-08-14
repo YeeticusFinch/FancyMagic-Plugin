@@ -604,7 +604,7 @@ public class Spell {
 		DamageSource source = DamageSource.builder(DamageType.MAGIC)
 			    .withDirectEntity(le) // the entity causing the damage
 			    .build();
-		
+		ItemStack spellComponent = null;
 		if (data.hotbarRequirements != null && le instanceof Player player) {
 			boolean hasMaterial = false;
 			String req = "";
@@ -615,6 +615,7 @@ public class Spell {
 					ItemStack component = player.getInventory().getItem(i);
 					if (component != null && component.getType() == mat) {
 						hasMaterial = true;
+						spellComponent = component;
 						break;
 					}
 				}
@@ -636,6 +637,7 @@ public class Spell {
 					if (hasMaterial) break;
 					if (component != null && component.getType() == mat) {
 						hasMaterial = true;
+						spellComponent = component;
 						break;
 					}
 				}
@@ -1594,7 +1596,7 @@ public class Spell {
 				le.getWorld().playSound(le, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1, 1);
 				
 				Vector vel = le.getEyeLocation().getDirection().multiply(0.4);
-				FancyParticle particle = new FancyParticle(Particle.ELECTRIC_SPARK, 1, 0, 0, 0, 0);
+				FancyParticle particle = new FancyParticle(Particle.END_ROD, 1, 0, 0, 0, 0);
 				float range = (20+lvl*4)*rangeMod;
 				
 				le.getWorld().spawnParticle(Particle.FLASH, le.getEyeLocation().add(le.getEyeLocation().getDirection()), 1, 0, 0, 0, 0);
@@ -1653,16 +1655,16 @@ public class Spell {
 							//entity.setFireTicks((int)(5+lvl*5));
 							LightningStrike lightning = point.getWorld().strikeLightning(point);
 				            lightning.setMetadata("lightningOwner", new FixedMetadataValue(FancyMagic.plugin, le));
-				            lightning.setMetadata("damage", new FixedMetadataValue(FancyMagic.plugin, 5+lvl*2.4f));
+				            lightning.setMetadata("damage", new FixedMetadataValue(FancyMagic.plugin, 6+lvl*2.5f));
 				            
-				            chainLightning(point, lvl*0.6f, le);
+				            chainLightning(point, lvl*0.8f, le);
 						},
 						(point, block) -> {
 							
 							LightningStrike lightning = point.getWorld().strikeLightning(point);
 				            lightning.setMetadata("lightningOwner", new FixedMetadataValue(FancyMagic.plugin, le));
-				            lightning.setMetadata("damage", new FixedMetadataValue(FancyMagic.plugin, 5+lvl*2.4f));
-				            chainLightning(point, lvl*0.6f, le);
+				            lightning.setMetadata("damage", new FixedMetadataValue(FancyMagic.plugin, 6+lvl*2.5f));
+				            chainLightning(point, lvl*0.8f, le);
 						}
 						);
 				
@@ -1679,11 +1681,209 @@ public class Spell {
 					break;
 				}
 			case "Transmute Water":
+			{
+				Material liquid = Material.WATER;
+				Material full = Material.WATER_BUCKET;
+				Material empty = Material.BUCKET;
+				boolean pickup = false;
+				if (le instanceof Player player) {
+					if (spellComponent.getType() == full) {
+					} else if (spellComponent.getType() == empty) {
+						pickup = true;
+						
+					} else {
+						success = false;
+						player.sendMessage(ChatColor.RED + "Missing " + full.toString().toLowerCase().replace('_', ' ') + " or " + empty.toString().toLowerCase().replace('_', ' ') + " in hotbar.");
+						return 20;
+					}
+				}
+				le.getWorld().playSound(le.getEyeLocation(), Sound.ENTITY_ZOMBIE_CONVERTED_TO_DROWNED, 1, 1);
+				success = true;
+				cooldown = 20;
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.4);
+				FancyParticle particle = new FancyParticle(Particle.DRIPPING_WATER, 1, 0, 0, 0, 0);
+				float range = (20+lvl*3.5f)*rangeMod;
+				
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				
+				final boolean isPickingUp = pickup;
+				
+				final ItemStack bucket = spellComponent;
+				
+				laserTick(nearbyEntities, 0, le, le.getEyeLocation(), vel, particle, range, true, 0.4, false, false, 
+						(point, entity) -> {
+							point.getWorld().spawnParticle(Particle.FLASH, point, 5, 0, 0, 0, 0);
+							point = Util.getSafeTeleport(point, 1.5);
+				            if (isPickingUp) {
+				            	if (point.getBlock().getType() == liquid) {
+				            		bucket.setType(full);
+				            		point.getBlock().setType(Material.AIR);
+				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL, 1, 1);
+				            	}
+				            } else {
+				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
+				            	point.getBlock().setType(liquid);
+			            		bucket.setType(empty);
+			            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_EMPTY, 1, 1);
+				            }
+						},
+						(point, block) -> {
+							point.getWorld().spawnParticle(Particle.FLASH, point, 5, 0, 0, 0, 0);
+							point = Util.getSafeTeleport(point, 1.5);
+				            if (isPickingUp) {
+				            	if (point.getBlock().getType() == liquid) {
+				            		bucket.setType(full);
+				            		point.getBlock().setType(Material.AIR);
+				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL, 1, 1);
+				            	}
+				            } else {
+				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
+				            	point.getBlock().setType(liquid);
+			            		bucket.setType(empty);
+			            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_EMPTY, 1, 1);
+				            }
+						}
+						);
 				break;
+			}
 			case "Transmute Snow":
+			{
+				Material liquid = Material.POWDER_SNOW;
+				Material full = Material.POWDER_SNOW_BUCKET;
+				Material empty = Material.BUCKET;
+				boolean pickup = false;
+				if (le instanceof Player player) {
+					if (spellComponent.getType() == full) {
+					} else if (spellComponent.getType() == empty) {
+						pickup = true;
+						
+					} else {
+						success = false;
+						player.sendMessage(ChatColor.RED + "Missing " + full.toString().toLowerCase().replace('_', ' ') + " or " + empty.toString().toLowerCase().replace('_', ' ') + " in hotbar.");
+						return 20;
+					}
+				}
+				le.getWorld().playSound(le.getEyeLocation(), Sound.ENTITY_ZOMBIE_CONVERTED_TO_DROWNED, 1, 1);
+				success = true;
+				cooldown = 20;
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.4);
+				FancyParticle particle = new FancyParticle(Particle.SNOWFLAKE, 1, 0, 0, 0, 0);
+				float range = (20+lvl*3.5f)*rangeMod;
+				
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				
+				final boolean isPickingUp = pickup;
+				
+				final ItemStack bucket = spellComponent;
+				
+				laserTick(nearbyEntities, 0, le, le.getEyeLocation(), vel, particle, range, true, 0.4, false, false, 
+						(point, entity) -> {
+							point.getWorld().spawnParticle(Particle.FLASH, point, 5, 0, 0, 0, 0);
+							point = Util.getSafeTeleport(point, 1.5);
+				            if (isPickingUp) {
+				            	if (point.getBlock().getType() == liquid) {
+				            		bucket.setType(full);
+				            		point.getBlock().setType(Material.AIR);
+				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL_POWDER_SNOW, 1, 1);
+				            	}
+				            } else {
+				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
+				            	point.getBlock().setType(liquid);
+			            		bucket.setType(empty);
+			            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_EMPTY_POWDER_SNOW, 1, 1);
+				            }
+						},
+						(point, block) -> {
+							point.getWorld().spawnParticle(Particle.FLASH, point, 5, 0, 0, 0, 0);
+							point = Util.getSafeTeleport(point, 1.5);
+				            if (isPickingUp) {
+				            	if (point.getBlock().getType() == liquid) {
+				            		bucket.setType(full);
+				            		point.getBlock().setType(Material.AIR);
+				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL_POWDER_SNOW, 1, 1);
+				            	}
+				            } else {
+				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
+				            	point.getBlock().setType(liquid);
+			            		bucket.setType(empty);
+			            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_EMPTY_POWDER_SNOW, 1, 1);
+				            }
+						}
+						);
 				break;
+			}
 			case "Transmute Lava":
+			{
+				Material liquid = Material.WATER;
+				Material full = Material.WATER_BUCKET;
+				Material empty = Material.BUCKET;
+				boolean pickup = false;
+				if (le instanceof Player player) {
+					if (spellComponent.getType() == full) {
+					} else if (spellComponent.getType() == empty) {
+						pickup = true;
+						
+					} else {
+						success = false;
+						player.sendMessage(ChatColor.RED + "Missing " + full.toString().toLowerCase().replace('_', ' ') + " or " + empty.toString().toLowerCase().replace('_', ' ') + " in hotbar.");
+						return 20;
+					}
+				}
+				le.getWorld().playSound(le.getEyeLocation(), Sound.ENTITY_ZOMBIE_CONVERTED_TO_DROWNED, 1, 1);
+				success = true;
+				cooldown = 20;
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.4);
+				FancyParticle particle = new FancyParticle(Particle.DRIPPING_LAVA, 1, 0, 0, 0, 0);
+				float range = (20+lvl*3.5f)*rangeMod;
+				
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				
+				final boolean isPickingUp = pickup;
+				
+				final ItemStack bucket = spellComponent;
+				
+				laserTick(nearbyEntities, 0, le, le.getEyeLocation(), vel, particle, range, true, 0.4, false, false, 
+						(point, entity) -> {
+							point.getWorld().spawnParticle(Particle.FLASH, point, 5, 0, 0, 0, 0);
+							point = Util.getSafeTeleport(point, 1.5);
+				            if (isPickingUp) {
+				            	if (point.getBlock().getType() == liquid) {
+				            		bucket.setType(full);
+				            		point.getBlock().setType(Material.AIR);
+				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL, 1, 1);
+				            	}
+				            } else {
+				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
+				            	point.getBlock().setType(liquid);
+			            		bucket.setType(empty);
+			            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_EMPTY, 1, 1);
+				            }
+						},
+						(point, block) -> {
+							point.getWorld().spawnParticle(Particle.FLASH, point, 5, 0, 0, 0, 0);
+							point = Util.getSafeTeleport(point, 1.5);
+				            if (isPickingUp) {
+				            	if (point.getBlock().getType() == liquid) {
+				            		bucket.setType(full);
+				            		point.getBlock().setType(Material.AIR);
+				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL_LAVA, 1, 1);
+				            	}
+				            } else {
+				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
+				            	point.getBlock().setType(liquid);
+			            		bucket.setType(empty);
+			            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_EMPTY_LAVA, 1, 1);
+				            }
+						}
+						);
 				break;
+			}
 			case "Mage Armor":
 				break;
 			case "Shield":

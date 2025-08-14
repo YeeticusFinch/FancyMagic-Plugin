@@ -395,6 +395,33 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
                 }
             }
         }
+    	// Check if the damager is a lightning strike
+        if (event.getDamager() instanceof LightningStrike) {
+            LightningStrike lightning = (LightningStrike) event.getDamager();
+            float damageMod = 1;
+            if (event.getEntity() instanceof LivingEntity le && le.getScoreboardTags().contains("PrimordialWard")) {
+            	event.setCancelled(true);
+            	damageMod = 0;
+            } else if (event.getEntity() instanceof LivingEntity le && le.getScoreboardTags().contains("ElementalWard")) {
+            	event.setDamage(event.getDamage()/2);
+            	damageMod = 0.5f;
+            }
+
+            // Check if the lightning has an owner
+            if (lightning.hasMetadata("lightningOwner") && lightning.getMetadata("lightningOwner").get(0).value() instanceof LivingEntity owner && event.getEntity() instanceof Damageable de) {
+                //LivingEntity owner = (LivingEntity) lightning.getMetadata("lightningOwner").get(0).value();
+            	DamageSource source = DamageSource.builder(DamageType.MAGIC)
+        			    .withDirectEntity(owner) // the entity causing the damage
+        			    .build();
+                //event.setDamage(event.getDamage(), owner);
+            	if (lightning.hasMetadata("damage")) {
+            		de.damage(damageMod * lightning.getMetadata("damage").get(0).asDouble()/lightning.getLocation().distance(de.getLocation()), source);
+            	} else
+            		de.damage(damageMod * event.getFinalDamage(), source);
+                
+                event.setCancelled(true);
+            }
+        }
     }
     
     @EventHandler
@@ -489,33 +516,6 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 		}
 		
 		return true;
-    }
-    
-    @EventHandler
-    public void onEntityDamagedByLightning(EntityDamageByEntityEvent event) {
-        // Check if the damager is a lightning strike
-        if (event.getDamager() instanceof LightningStrike) {
-            LightningStrike lightning = (LightningStrike) event.getDamager();
-            
-            if (event.getEntity() instanceof LivingEntity le && le.getScoreboardTags().contains("PrimordialWard")) {
-            	event.setCancelled(true);
-            } else if (event.getEntity() instanceof LivingEntity le && le.getScoreboardTags().contains("ElementalWard")) {
-            	event.setDamage(event.getDamage()/2);
-            }
-
-            // Check if the lightning has an owner
-            if (lightning.hasMetadata("lightningOwner") && lightning.getMetadata("lightningOwner").get(0).value() instanceof LivingEntity owner && event.getEntity() instanceof Damageable de) {
-                //LivingEntity owner = (LivingEntity) lightning.getMetadata("lightningOwner").get(0).value();
-
-                //event.setDamage(event.getDamage(), owner);
-            	if (lightning.hasMetadata("damage")) {
-            		de.damage(lightning.getMetadata("damage").get(0).asDouble()/lightning.getLocation().distance(de.getLocation()), owner);
-            	} else
-            		de.damage(event.getFinalDamage(), owner);
-                
-                event.setCancelled(true);
-            }
-        }
     }
     
     @EventHandler
