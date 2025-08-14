@@ -1,14 +1,30 @@
 package com.lerdorf.fancymagic;
 
+import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
+
+import org.bukkit.entity.EntityType;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -29,6 +45,8 @@ import org.bukkit.command.TabExecutor;
 import org.bukkit.craftbukkit.block.impl.CraftLectern;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Damageable;
@@ -39,6 +57,7 @@ import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -52,6 +71,7 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.world.LootGenerateEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -71,12 +91,16 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import com.lerdorf.fancymagic.SpellBookMenu.SpellData;
+import com.lerdorf.fancymagic.enchants.FancyEnchant;
+import com.lerdorf.fancymagic.enchants.Spellbound;
 
 import de.tr7zw.nbtapi.NBTItem;
+import io.papermc.paper.registry.RegistryKey;
 
 import org.joml.Vector3f;
 import org.joml.AxisAngle4f;
 
+import net.kyori.adventure.key.Key;
 import net.md_5.bungee.api.ChatColor;
 import net.minecraft.world.item.crafting.Recipe;
 
@@ -84,12 +108,18 @@ import org.bukkit.block.data.Bisected;
 
 public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 
+    public static final Map<Key, FancyEnchant> ENCHANTS = new HashMap<>();
+    public static boolean initialized = false;
+	
 	private File configFile;
 	private Map<String, Object> configValues;
 	
 	public static Map<UUID, List<LivingEntity>> minions = new HashMap<>();
 
 	public static Plugin plugin;
+	
+	private Set<UUID> falseLifePlayers = new HashSet<>();
+	private Random random = new Random();
 
 	public void loadConfig() {
 		DumperOptions options = new DumperOptions();
@@ -209,6 +239,12 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         
     }
     
+    public boolean isFocus(ItemStack item) {
+    	if (item == null) return false;
+    	ItemMeta meta = item.getItemMeta();
+    	return meta != null && meta.getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) && meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0;
+    }
+    
     public HashMap<Player, List<Boolean>> clicks = new HashMap<>();
     public HashMap<Player, Long> lastClick = new HashMap<>();
     
@@ -217,7 +253,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     	ItemStack item = player.getEquipment().getItemInMainHand();
     	if (item != null) {
     		ItemMeta meta = item.getItemMeta();
-    		if (meta != null && meta.getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) && meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
+    		if (isFocus(item)) {
     			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
     				if (clicks.containsKey(player) && System.currentTimeMillis() - lastClick.get(player) <= 5) {
         				// Clicked too fast, probably the same click
@@ -565,5 +601,259 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         }
     }
 
+    
+    @EventHandler
+    public void onLootGenerate(LootGenerateEvent event) {
+        // Only target dungeon chests
+        //if (!event.getLootTable().getKey().toString().equals("minecraft:chests/simple_dungeon")) return;
+    	Bukkit.broadcastMessage("Generating loot for " + event.getLootTable().getKey().toString());
+        /*
+        // Create your custom item
+        ItemStack customSword = new ItemStack(Material.DIAMOND_SWORD);
+        ItemMeta meta = customSword.getItemMeta();
+        meta.setDisplayName(ChatColor.AQUA + "Sword of Frost");
+        meta.addEnchant(Enchantment.SHARPNESS, 5, true);
+        customSword.setItemMeta(meta);
+
+        // Add it to the loot
+        event.getLoot().add(customSword);
+        */
+    }
+    
+    @EventHandler
+    public void onPrepareItemEnchant(PrepareItemEnchantEvent event) {
+        ItemStack item = event.getItem();
+        Player player = event.getEnchanter();
+        
+        // Check if it's a spellcasting focus
+        if (isFocus(item)) {
+            // Clear all default offers
+            for (int i = 0; i < event.getOffers().length; i++) {
+                event.getOffers()[i] = null;
+            }
+            
+            List<EnchantmentOffer> focusOffers = new ArrayList<>();
+            
+            // Add Unbreaking (common)
+            if (random.nextFloat() < 0.4f) {
+                int level = Math.min(3, random.nextInt(3) + 1);
+                int cost = 10 + level * 5 + random.nextInt(10);
+                focusOffers.add(new EnchantmentOffer(Enchantment.UNBREAKING, level, cost));
+            }
+            
+            // Add Spellbound (rare) - get the registered enchantment
+            Enchantment spellboundEnchant = Bukkit.getRegistry(Enchantment.class).get(Spellbound.KEY);
+            if (spellboundEnchant != null && random.nextFloat() < 0.2f) {
+                int level = Math.min(3, random.nextInt(2) + 1); // Level 1-2 for rarity
+                int cost = 25 + level * 10 + random.nextInt(15);
+                focusOffers.add(new EnchantmentOffer(spellboundEnchant, level, cost));
+            }
+            
+            // Add Quick Cast (if you have it registered)
+            // Enchantment quickCastEnchant = Bukkit.getRegistry(RegistryKey.ENCHANTMENT).get(QuickCast.KEY);
+            // if (quickCastEnchant != null && random.nextFloat() < 0.15f) {
+            //     focusOffers.add(new EnchantmentOffer(quickCastEnchant, 1, 30 + random.nextInt(20)));
+            // }
+            
+            // Add False Life (if you have it registered)
+            // Enchantment falseLifeEnchant = Bukkit.getRegistry(RegistryKey.ENCHANTMENT).get(FalseLife.KEY);
+            // if (falseLifeEnchant != null && random.nextFloat() < 0.18f) {
+            //     int level = Math.min(2, random.nextInt(2) + 1);
+            //     focusOffers.add(new EnchantmentOffer(falseLifeEnchant, level, 20 + level * 8));
+            // }
+            
+            // Assign offers to the event (up to 3)
+            for (int i = 0; i < Math.min(3, focusOffers.size()); i++) {
+                event.getOffers()[i] = focusOffers.get(i);
+            }
+            
+            // If no custom offers, add at least Unbreaking
+            if (focusOffers.isEmpty()) {
+                event.getOffers()[0] = new EnchantmentOffer(Enchantment.UNBREAKING, 1, 15);
+            }
+            
+        } else if (item.getType().name().contains("SWORD") && !isFocus(item)) {
+            // For regular swords, add spellbound as a rare option
+        	Enchantment spellboundEnchant = Bukkit.getRegistry(Enchantment.class).get(Spellbound.KEY);
+            if (spellboundEnchant != null && random.nextFloat() < 0.12f) { // 12% chance
+                // Find an empty slot or replace the lowest cost enchantment
+                int replaceIndex = -1;
+                int lowestCost = Integer.MAX_VALUE;
+                
+                for (int i = 0; i < event.getOffers().length; i++) {
+                    if (event.getOffers()[i] == null) {
+                        replaceIndex = i;
+                        break;
+                    } else if (event.getOffers()[i].getCost() < lowestCost) {
+                        lowestCost = event.getOffers()[i].getCost();
+                        replaceIndex = i;
+                    }
+                }
+                
+                if (replaceIndex != -1) {
+                    int level = Math.min(3, random.nextInt(2) + 1);
+                    int cost = 30 + level * 12 + random.nextInt(20);
+                    event.getOffers()[replaceIndex] = new EnchantmentOffer(spellboundEnchant, level, cost);
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onEnchantItem(EnchantItemEvent event) {
+        ItemStack item = event.getItem();
+        
+    }
+
+    @EventHandler
+    public void onEntityDeath(EntityDeathEvent event) {
+        if (event.getEntity().getKiller() instanceof Player player) {
+            ItemStack weapon = player.getInventory().getItemInMainHand();
+
+            // Check for spellbound
+            if (weapon == null) return;
+
+            // Get the custom enchantment from the registry
+            Enchantment spellbound = Bukkit.getRegistry(Enchantment.class).get(Spellbound.KEY);
+            if (spellbound != null && weapon.containsEnchantment(spellbound)) {
+                int level = weapon.getEnchantmentLevel(spellbound);
+                // Do something based on the level
+                //player.sendMessage("Your weapon had Spellbound level " + level + "!");
+                double spellDropChance = ((Spellbound)ENCHANTS.get(Spellbound.KEY)).getChanceToDropSpellPerLevel() * level;
+                if (Math.random() < spellDropChance) {
+	                switch (event.getEntity().getType()) {
+		                case EntityType.ENDERMAN:
+		                	event.getDrops().add(Spell.MISTY_STEP.getScroll());
+		                	break;
+		                case EntityType.HUSK:
+		                	event.getDrops().add(Spell.FIREBOLT.getScroll());
+		                	break;
+		                case EntityType.BLAZE:
+		                	event.getDrops().add(Spell.FIRE_BARRAGE.getScroll());
+		                	break;
+		                case EntityType.GHAST:
+		                	event.getDrops().add(Spell.FIREBALL.getScroll());
+		                	break;
+		                case EntityType.CREEPER:
+		                	event.getDrops().add(Spell.EXPLOSION.getScroll());
+		                	break;
+		                case EntityType.MAGMA_CUBE:
+		                	event.getDrops().add(Spell.FIRE_RESISTANCE.getScroll());
+		                	break;
+		                case EntityType.STRAY:
+		                	event.getDrops().add(Spell.FREEZE.getScroll());
+		                	break;
+		                case EntityType.ELDER_GUARDIAN:
+		                	event.getDrops().add(Spell.CHAIN_LIGHTNING.getScroll());
+		                	break;
+		                case EntityType.EVOKER:
+		                	event.getDrops().add(Spell.CHRONAL_SHIFT.getScroll());
+		                	break;
+		                case EntityType.DROWNED:
+		                	event.getDrops().add(Spell.TRANSMUTE_WATER.getScroll());
+		                	break;
+		                case EntityType.POLAR_BEAR:
+		                	event.getDrops().add(Spell.TRANSMUTE_SNOW.getScroll());
+		                	break;
+		                case EntityType.WITCH:
+		                	if (Math.random() < 0.25)
+		                		event.getDrops().add(Spell.MAGE_ARMOR.getScroll());
+		                	else if (Math.random() < 0.3)
+		                		event.getDrops().add(Spell.ENERVATION.getScroll());
+		                	else if (Math.random() < 0.5)
+		                		event.getDrops().add(Spell.PLANT_GROWTH.getScroll());
+		                	else
+		                		event.getDrops().add(Spell.TRANSMUTE_PLANTS.getScroll());
+		                	break;
+		                case EntityType.VEX:
+		                	event.getDrops().add(Spell.MAGIC_MISSILE.getScroll());
+		                	break;
+		                case EntityType.BREEZE:
+		                	event.getDrops().add(Spell.WIND_BURST.getScroll());
+		                	break;
+		                case EntityType.PHANTOM:
+		                	event.getDrops().add(Spell.LEVITATION.getScroll());
+		                	break;
+		                case EntityType.IRON_GOLEM:
+		                	event.getDrops().add(Spell.THUNDERWAVE.getScroll());
+		                	break;
+		                case EntityType.ZOMBIE:
+		                	if (event.getEntity() instanceof Zombie zomb && zomb.isBaby()) {
+		                		event.getDrops().add(Spell.HASTE.getScroll());
+		                	} else {
+		                		
+		                	}
+		                	break;
+		                case EntityType.SPIDER:
+		                	event.getDrops().add(Spell.WALL_RUNNING.getScroll());
+		                	break;
+						default:
+							break;
+	                }
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerDropItem(PlayerDropItemEvent event) {
+        Player player = event.getPlayer();
+        ItemStack droppedItem = event.getItemDrop().getItemStack();
+        
+        if (isFocus(droppedItem) /* && droppedItem has the QuickCast enchant */) {
+            event.setCancelled(true); // Cancel the drop
+            
+            // Cast the LLL spell (index 0)
+            ItemStack spellbook = player.getInventory().getItemInOffHand();
+            if (spellbook != null && spellbook.getItemMeta() != null && 
+                spellbook.getItemMeta().getPersistentDataContainer().has(
+                    new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER)) {
+                
+                List<SpellData> spells = sbMenu.loadPreparedSpells(spellbook);
+                if (!spells.isEmpty()) {
+                    // Create LLL click pattern for first spell
+                    List<Boolean> lllPattern = new ArrayList<>();
+                    lllPattern.add(false); // L
+                    lllPattern.add(false); // L  
+                    lllPattern.add(false); // L
+                    
+                    Spell spell = sbMenu.fromClickCombination(spells, lllPattern);
+                    if (spell != null) {
+                        int cooldown = castSpell(player, spell, droppedItem);
+                        player.setCooldown(droppedItem, cooldown);
+                        player.sendMessage(ChatColor.AQUA + "Quickcast activated!");
+                    }
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerItemHeld(PlayerItemHeldEvent event) {
+        Player player = event.getPlayer();
+        
+        // Handle False Life enchantment
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            ItemStack newItem = player.getInventory().getItem(event.getNewSlot());
+            ItemStack oldItem = player.getInventory().getItem(event.getPreviousSlot());
+            
+            // Remove false life from old item
+            if (isFocus(oldItem) /* && oldItem has the FalseLife enchant*/) {
+                if (falseLifePlayers.contains(player.getUniqueId())) {
+                    player.removePotionEffect(PotionEffectType.ABSORPTION);
+                    falseLifePlayers.remove(player.getUniqueId());
+                }
+            }
+            
+            // Add false life from new item
+            if (isFocus(newItem)/* && newItem has the FalseLife enchant */) {
+                int level = 1; // get false life level
+                player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, Integer.MAX_VALUE, level - 1));
+                falseLifePlayers.add(player.getUniqueId());
+            }
+        }, 1L);
+    }
+    
+    
 
 }

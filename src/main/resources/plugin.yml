@@ -1,7 +1,8 @@
 name: FancyMagic
 main: com.lerdorf.fancymagic.FancyMagic
 version: 1.0
-api-version: 1.21
+bootstrapper: com.lerdorf.fancymagic.FancyMagicBootstrap
+api-version: '1.21.7'
 commands:
   magic:
     description: Get a spell scroll

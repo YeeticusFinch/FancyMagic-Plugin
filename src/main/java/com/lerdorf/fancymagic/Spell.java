@@ -285,7 +285,7 @@ public class Spell {
 			null,
 			null,
 			5,
-			new Material[] {Material.FIRE_CHARGE}, // hotbar requirements
+			new Material[] {Material.LIGHTNING_ROD}, // hotbar requirements
 			null, // inventory requirements
 			"Strikes your target with lightning, and the lightning chains off and hits other nearby entities too."
 			);
@@ -522,6 +522,94 @@ public class Spell {
 			new Material[] {Material.BELL}, // hotbar requirements
 			null, // inventory requirements
 			"Launches a thunderous wave in front of you."
+			);
+	public static final SpellType PLANT_GROWTH = new SpellType(
+			"Plant Growth",
+			new String[] {
+					"PPP",
+					"TFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('T', Material.COMPOSTER);
+				put('F', Material.BONE_MEAL);
+				put('G', Material.DIAMOND);
+			}},
+			5,
+			new Material[] {Material.BONE_MEAL}, // hotbar requirements
+			null, // inventory requirements
+			"Grows plants around you and accelerates crop growth."
+			);
+	public static final SpellType TRANSMUTE_PLANTS = new SpellType(
+			"Transmute Plants",
+			new String[] {
+					"PPP",
+					"TFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('T', Material.AMETHYST_SHARD);
+				put('F', Material.COMPOSTER);
+				put('G', Material.DIAMOND);
+			}},
+			3,
+			new Material[] {Material.WHEAT_SEEDS, Material.CARROT, Material.POTATO}, // hotbar requirements
+			null, // inventory requirements
+			"Automatically plants crops from your hotbar into nearby tilled dirt."
+			);
+	public static final SpellType ELEMENTAL_WARD = new SpellType(
+			"Elemental Ward",
+			new String[] {
+					"PPP",
+					"TFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('T', Material.LAVA_BUCKET);
+				put('F', Material.MILK_BUCKET);
+				put('G', Material.WATER_BUCKET);
+			}},
+			3,
+			null, // hotbar requirements
+			null, // inventory requirements
+			"Reduces elemental damage (fire, lightning, poison…)."
+			);
+	public static final SpellType PRIMORDIAL_WARD = new SpellType(
+			"Primordial Ward",
+			new String[] {
+					"PPP",
+					"TFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('T', Material.ANCIENT_DEBRIS);
+				put('F', Material.HEART_OF_THE_SEA);
+				put('G', Material.DIAMOND_BLOCK);
+			}},
+			6,
+			null, // hotbar requirements
+			null, // inventory requirements
+			"Reduces elemental damage and fully protects against negative potion effects."
+			);
+	public static final SpellType HASTE = new SpellType(
+			"Haste",
+			null, null,
+			4,
+			new Material[] {Material.SUGAR}, // hotbar requirements
+			null, // inventory requirements
+			"Applies the speed and the haste potion effect and reduces spell cooldowns."
+			);
+	public static final SpellType WALL_RUNNING = new SpellType(
+			"Haste",
+			null, null,
+			4,
+			new Material[] {Material.HONEY_BOTTLE}, // hotbar requirements
+			null, // inventory requirements
+			"Lets you run on walls."
 			);
 	
 	// Spell.java
