@@ -2185,25 +2185,25 @@ public class Spell {
 				// Convert to AxisAngle
 				AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
 				
-				ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
-						ItemDisplay.class, entity -> {
-							// customize the entity!
-							entity.setItemStack(d1);
-							entity.setTransformation(
-									new Transformation(new Vector3f(), axisAngle, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
-							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
-							entity.addScoreboardTag("shield_display");
-						});	
-				
-				ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
-						ItemDisplay.class, entity -> {
-							// customize the entity!
-							entity.setItemStack(d2);
-							entity.setTransformation(
-									new Transformation(new Vector3f(), axisAngle, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
-							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
-							entity.addScoreboardTag("shield_display");
-						});
+//				ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
+//						ItemDisplay.class, entity -> {
+//							// customize the entity!
+//							entity.setItemStack(d1);
+//							entity.setTransformation(
+//									new Transformation(new Vector3f(), axisAngle, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+//							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+//							entity.addScoreboardTag("shield_display");
+//						});	
+//				
+//				ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
+//						ItemDisplay.class, entity -> {
+//							// customize the entity!
+//							entity.setItemStack(d2);
+//							entity.setTransformation(
+//									new Transformation(new Vector3f(), axisAngle, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+//							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+//							entity.addScoreboardTag("shield_display");
+//						});
 				
 				ItemDisplay display3 = eyeloc.getWorld().spawn(eyeloc,
 						ItemDisplay.class, entity -> {
@@ -2278,35 +2278,36 @@ public class Spell {
 							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*tick)); // then 45° on Y axis
 							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
 							
-							
-							
-							
 							loc = le.getEyeLocation().add(le.getEyeLocation().getDirection().multiply(offset));
 							shield.teleport(loc);
-							display.teleport(loc);
-							display.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
-							display2.teleport(loc);
-							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
-							display3.teleport(loc);
-							display3.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(0.8f, 0.8f, 0.8f), new AxisAngle4f()));
-							display4.teleport(loc);
-							display4.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.8f, 0.8f, 0.8f), new AxisAngle4f()));
-							display5.teleport(loc);
-							display5.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(0.6f, 0.6f, 0.6f), new AxisAngle4f()));
-							display6.teleport(loc);
-							display6.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.6f, 0.6f, 0.6f), new AxisAngle4f()));
-							display7.teleport(loc);
-							display7.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(0.4f, 0.4f, 0.4f), new AxisAngle4f()));
+//							display.teleport(loc);
+//							display.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+//							display2.teleport(loc.clone().subtract(loc.getDirection().multiply(0.5f)));
+//							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+							display3.teleport(loc.clone().subtract(loc.getDirection().multiply(0.3f)));
+							display3.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(0.65f, 0.65f, 0.65f), new AxisAngle4f()));
+							display4.teleport(loc.clone().subtract(loc.getDirection().multiply(0.2f)));
+							display4.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.6f, 0.6f, 0.6f), new AxisAngle4f()));
+							display5.teleport(loc.clone().subtract(loc.getDirection().multiply(0.15f)));
+							display5.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(0.45f, 0.45f, 0.45f), new AxisAngle4f()));
+							display6.teleport(loc.clone().subtract(loc.getDirection().multiply(0.1f)));
+							display6.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.4f, 0.4f, 0.4f), new AxisAngle4f()));
+							display7.teleport(loc.clone().subtract(loc.getDirection().multiply(0.05f)));
+							display7.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(0.3f, 0.3f, 0.3f), new AxisAngle4f()));
 							display8.teleport(loc);
-							display8.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.4f, 0.4f, 0.4f), new AxisAngle4f()));
+							display8.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.2f, 0.2f, 0.2f), new AxisAngle4f()));
 							
 							if (tick > duration || shield.getScoreboardTags().contains("hit")) {
 								le.removeScoreboardTag("shielding");
 								shield.remove();
-								display.remove();
-								display2.remove();
+//								display.remove();
+//								display2.remove();
 								display3.remove();
 								display4.remove();
+								display5.remove();
+								display6.remove();
+								display7.remove();
+								display8.remove();
 								return false;
 							} else
 								return true;
@@ -2359,7 +2360,14 @@ public class Spell {
 		}
 		
 		if (success) {
-			item.damage((int)(data.cost + lvl-1), le);
+			int totalCost = (int)(data.cost + lvl-1);
+			int unbreaking = (item.getEnchantmentLevel(Enchantment.UNBREAKING));
+			if (unbreaking <= 0) unbreaking = 0;
+			for (int i = 0; i < totalCost; i++) {
+				if (Math.random() < 1.0/(1.0+unbreaking))
+					item.damage(1, le);
+			}
+			//item.damage((int)(data.cost + lvl-1), le);
 		}
 		
 		return (int)Math.max(cooldown * cooldownMod, 1);
@@ -2432,23 +2440,29 @@ public class Spell {
 	    	Collection<LivingEntity> nearbyEntities = entity.getWorld().getNearbyLivingEntities(
 					entity.getEyeLocation(), range * 2, range * 2, range * 2,
 					e -> !e.equals(entity));
+	    	
+			float speed = 0.3f+ 0.1f*level;
 	    	for (int i = 0; i < numMissiles; i++) {
-	    		Vector randDir = (new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).normalize();
+	    		//Vector randDir = (new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).normalize();
 	    		
 	    		final Vector vel = (new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).multiply(0.5+level*0.1f);
 
 				final LivingEntity target = targets.get(i%targets.size());
 				SpellManager.addSpell(this, entity, entity.getEyeLocation().add(vel), item, rangeMod, cooldownMod, potencyMod, 
 						(loc, tick) -> {
-							double speed = vel.length();
-							Vector targetVel = target.getEyeLocation().toVector().add(target.getVelocity()).subtract(loc.toVector().add(vel)).multiply(speed);
-							vel.add(targetVel.subtract(vel).normalize().multiply(0.4*speed)).normalize().multiply(speed);
+							if (vel.getY() < -9999)
+								return false;
+							if (tick > 2 && tick % 2 == 0) {
+								Vector targetVel = target.getEyeLocation().toVector().add(target.getVelocity()).subtract(loc.toVector().add(vel)).multiply(speed);
+								vel.add(targetVel.subtract(vel).normalize().multiply(0.4*speed)).normalize().multiply(speed);
+							}
 							return laserTick(nearbyEntities, tick, entity, loc, vel, particle, range, false, 0.5, true, false,
 									(point, e) -> {
 										//entity.damage(5+lvl, le);
-										entity.damage(3+level*1.2f, source);
-										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
-										entity.getWorld().playSound(point, Sound.ENTITY_SHULKER_BULLET_HIT, 1, 1.4f);
+										e.damage(3+level*1.2f, source);
+										e.setVelocity(e.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+										e.getWorld().playSound(point, Sound.ENTITY_SHULKER_BULLET_HIT, 1, 1.4f);
+										vel.setY(-10000);
 									},
 									(point, block) -> {
 										
@@ -2631,7 +2645,7 @@ public class Spell {
         minion.setRemoveWhenFarAway(false);
     }
 	
-	private static void spawnParticleSphere(LivingEntity e, double radius, int density, Particle particle) {
+	public static void spawnParticleSphere(LivingEntity e, double radius, int density, Particle particle) {
 		// TODO Auto-generated method stub
 		Location center = e.getLocation().add(0, 1, 0); // Center at chest height
 
@@ -2756,8 +2770,8 @@ public class Spell {
 					particle.spawn(point);
 
 					for (LivingEntity le : nearbyEntities) {
-						if (isEntityWithinRadiusOfLine(point.clone().subtract(step), point, le, radius) && !hitEntities.contains(le.getUniqueId())) {
-							hitEntities.add(le.getUniqueId());
+						if (isEntityWithinRadiusOfLine(point.clone().subtract(step), point, le, radius) && (!pierceEntity || !hitEntities.contains(le.getUniqueId()))) {
+							if (!hitEntities.contains(le.getUniqueId())) hitEntities.add(le.getUniqueId());
 							hitEntity.accept(point, le);
 							if (!pierceEntity) {
 								return false;

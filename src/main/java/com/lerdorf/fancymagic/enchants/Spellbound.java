@@ -137,7 +137,7 @@ public class Spellbound implements FancyEnchant {
                                 "MAINHAND"
                         )),
                 3, // max level
-                0.05 // chance to drop spell per level
+                0.08 // chance to drop spell per level
         );
 
             FancyMagic.ENCHANTS.put(Spellbound.KEY, spellboundEnchant);
