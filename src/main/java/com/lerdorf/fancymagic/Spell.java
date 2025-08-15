@@ -719,7 +719,7 @@ public class Spell {
     	}
     }
     
-	public int cast(LivingEntity le, ItemStack item, float rangeMod, float cooldownMod, float potencyMod) {
+	public int cast(LivingEntity le, ItemStack item, float rangeMod, float cooldownMod, float potencyMod, boolean twinning) {
 		
 		int cooldown = 20;
 		
@@ -792,6 +792,11 @@ public class Spell {
 		switch (data.name) {
 			case "Firebolt":
 			{
+				if (twinning) {
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+    					cast(le, item, rangeMod, cooldownMod, potencyMod, false);
+					}, 10);
+				}
 				success = true;
 				cooldown = 20;
 				le.getWorld().playSound(le, Sound.ENTITY_BLAZE_SHOOT, 1, 2);
@@ -829,7 +834,10 @@ public class Spell {
 			case "Fire Barrage":
 			{
 				success = true;
-				cooldown = 100;
+				cooldown = 100 + (twinning ? 20 : 0);
+				
+				final int duration = (int)Math.ceil(5 + 5*lvl);
+				
 				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
 				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
 				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
@@ -838,111 +846,121 @@ public class Spell {
 				AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
 		
 				Vector offset = new Vector(0, -0.2f, 0);
-				float rightOffset = 0.2f;
-				float forwardOffset = 0.4f;
-		
-				ItemStack d1 = new ItemStack(Material.FIRE_CHARGE);
-				ItemMeta meta = d1.getItemMeta();
-				meta.setItemModel(NamespacedKey.fromString("fsp:fire_barrage"));
-				d1.setItemMeta(meta);
-				
-				ItemStack d2 = new ItemStack(Material.FIRE_CHARGE);
-				meta = d2.getItemMeta();
-				meta.setItemModel(NamespacedKey.fromString("fsp:fire_barrage_squares"));
-				d2.setItemMeta(meta);
-				
-				ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
-						ItemDisplay.class, entity -> {
-							// customize the entity!
-							entity.setItemStack(d1);
-							entity.setTransformation(
-									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
-							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
-		
-						});
-				
-				ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
-						ItemDisplay.class, entity -> {
-							// customize the entity!
-							entity.setItemStack(d2);
-							entity.setTransformation(
-									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
-							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
-		
-						});
+
 				Spell spell = this;
 
-				new BukkitRunnable() {
-					int c = 0;
-
-					@Override
-					public void run() {
-						Quaternionf rot = new Quaternionf().rotateZ((float) Math.toRadians(10*c)); // then 45° on Y axis
-						AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
-						
-						Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
-						AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
-						
-						Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
-						display.teleport(eyeloc);
-						display.setTransformation(new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
-						display2.teleport(eyeloc);
-						display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
-						
-						if (c < 5 + 5*lvl) {
-							if (c % 3 == 0) {
-								le.getWorld().playSound(le, Sound.ENTITY_BLAZE_SHOOT, 1, 2);
-								Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.2f);
-								FancyParticle particle = new FancyParticle(Particle.FLAME, 1, 0, 0, 0, 0);
-								float range = (20+lvl*4)*rangeMod;
-								Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
-										le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
-										entity -> !entity.equals(le));
-								
-								Location randLoc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add((new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).multiply(1.4));
-								vel.add((new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).multiply(0.5));
-								
-								SpellManager.addSpell(spell, le, randLoc, item, rangeMod, cooldownMod, potencyMod, 
-										(loc, tick) -> {
-											return laserTick(nearbyEntities, tick, le, loc, vel.clone(), particle, range, false, 0.5, false, false, 
-													(point, entity) -> {
-														entity.damage(3+lvl*1.1, source);
-														entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.3)));
-														entity.setFireTicks((int)(5+lvl*5));
-														setOnFire(point.getBlock());
-														setOnFire(point.add(0, -1, 0).getBlock());
-														le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 1.4f);
-													},
-													(point, block) -> {
-														if (point.getBlock().getType().isAir())
-															point.getBlock().setType(Material.FIRE);
-														setOnFire(block);
-														if (point.clone().add(0, 1, 0).getBlock().getType().isAir())
-															point.clone().add(0, 1, 0).getBlock().setType(Material.FIRE);
-														setOnFire(point.clone().add(0, 1, 0).getBlock());
-														le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 1.4f);
-													}
-													);
-										});
+				for (int i = 0; i < (twinning ? 2 : 1); i++) {
+					float rightOffset = twinning ? 2*i-1 : 0;
+			
+					ItemStack d1 = new ItemStack(Material.FIRE_CHARGE);
+					ItemMeta meta = d1.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:fire_barrage"));
+					d1.setItemMeta(meta);
+					
+					ItemStack d2 = new ItemStack(Material.FIRE_CHARGE);
+					meta = d2.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:fire_barrage_squares"));
+					d2.setItemMeta(meta);
+					
+					ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d1);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+					
+					ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d2);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+				
+					new BukkitRunnable() {
+						int c = 0;
+	
+						@Override
+						public void run() {
+							Quaternionf rot = new Quaternionf().rotateZ((float) Math.toRadians(10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+							
+							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
+							
+							Vector right = twinning ? le.getEyeLocation().getDirection().rotateAroundY(Math.PI*0.5f).multiply(rightOffset) : new Vector(0, 0, 0);
+							
+							Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
+							display.teleport(eyeloc);
+							display.setTransformation(new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+							display2.teleport(eyeloc);
+							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+							
+							if (c < duration) {
+								if (c % 3 == 0) {
+									le.getWorld().playSound(le, Sound.ENTITY_BLAZE_SHOOT, 1, 2);
+									Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.2f);
+									FancyParticle particle = new FancyParticle(Particle.FLAME, 1, 0, 0, 0, 0);
+									float range = (20+lvl*4)*rangeMod;
+									Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+											le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+											entity -> !entity.equals(le));
+									
+									Location randLoc = eyeloc.clone().add(le.getEyeLocation().getDirection()).add((new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).multiply(1.4));
+									vel.add((new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).multiply(0.5));
+									
+									SpellManager.addSpell(spell, le, randLoc, item, rangeMod, cooldownMod, potencyMod, 
+											(loc, tick) -> {
+												return laserTick(nearbyEntities, tick, le, loc, vel.clone(), particle, range, false, 0.5, false, false, 
+														(point, entity) -> {
+															entity.damage(3+lvl*1.1, source);
+															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.3)));
+															entity.setFireTicks((int)(5+lvl*5));
+															setOnFire(point.getBlock());
+															setOnFire(point.add(0, -1, 0).getBlock());
+															le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 1.4f);
+														},
+														(point, block) -> {
+															if (point.getBlock().getType().isAir())
+																point.getBlock().setType(Material.FIRE);
+															setOnFire(block);
+															if (point.clone().add(0, 1, 0).getBlock().getType().isAir())
+																point.clone().add(0, 1, 0).getBlock().setType(Material.FIRE);
+															setOnFire(point.clone().add(0, 1, 0).getBlock());
+															le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 1.4f);
+														}
+														);
+											});
+								}
+							} else {
+								display.remove();
+								display2.remove();
+								cancel();
+								return;
 							}
-						} else {
-							display.remove();
-							display2.remove();
-							cancel();
-							return;
+							
+							c++;
 						}
 						
-						c++;
-					}
-					
-				}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+					}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+				}
 				
 				break;
 			}
 			case "Fireball":
 			{
 				success = true;
-				cooldown = 40;
+				cooldown = 40 + (twinning ? 10 : 0);
+				if (twinning) {
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+    					cast(le, item, rangeMod, cooldownMod, potencyMod, false);
+					}, 10);
+				}
 				Fireball fb = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation().getDirection()), Fireball.class);
 				fb.setFireTicks((int)(20*lvl));
 				fb.setIsIncendiary(true);
@@ -958,7 +976,12 @@ public class Spell {
 			case "Explosion":
 			{
 				success = true;
-				cooldown = 80;
+				cooldown = 80 + (twinning ? 10 : 0);
+				if (twinning) {
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+    					cast(le, item, rangeMod, cooldownMod, potencyMod, false);
+					}, 10);
+				}
 				le.getWorld().playSound(le, Sound.ENTITY_TNT_PRIMED, 1, 1.5f);
 				le.getWorld().playSound(le, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1, 0.8f);
 				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
@@ -1209,7 +1232,7 @@ public class Spell {
 			case "Freeze":
 			{
 				success = true;
-				cooldown = 40;
+				cooldown = 40 + (twinning ? 20 : 0);
 				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
 				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
 				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
@@ -1218,38 +1241,9 @@ public class Spell {
 				AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
 		
 				Vector offset = new Vector(0, -0.2f, 0);
-				float rightOffset = 0.2f;
+				//float rightOffset = 0.2f;
 				float forwardOffset = 0.4f;
-		
-				ItemStack d1 = new ItemStack(Material.SNOWBALL);
-				ItemMeta meta = d1.getItemMeta();
-				meta.setItemModel(NamespacedKey.fromString("fsp:ice_barrage"));
-				d1.setItemMeta(meta);
 				
-				ItemStack d2 = new ItemStack(Material.SNOWBALL);
-				meta = d2.getItemMeta();
-				meta.setItemModel(NamespacedKey.fromString("fsp:ice_barrage_squares"));
-				d2.setItemMeta(meta);
-				
-				ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
-						ItemDisplay.class, entity -> {
-							// customize the entity!
-							entity.setItemStack(d1);
-							entity.setTransformation(
-									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
-							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
-		
-						});
-				
-				ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
-						ItemDisplay.class, entity -> {
-							// customize the entity!
-							entity.setItemStack(d2);
-							entity.setTransformation(
-									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
-							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
-		
-						});
 				Spell spell = this;
 
 				Collection<PotionEffect> effects = new ArrayList<PotionEffect>();
@@ -1257,67 +1251,101 @@ public class Spell {
 				effects.add(new PotionEffect(PotionEffectType.MINING_FATIGUE, (int)Math.round(20*(1+lvl*0.6f)), (int)Math.round(lvl), true, true));
 				effects.add(new PotionEffect(PotionEffectType.WEAKNESS, (int)Math.round(20*(1+lvl*0.6f)), (int)Math.round(lvl), true, true));
 
-				new BukkitRunnable() {
-					int c = 0;
+				for (int i = 0; i < (twinning ? 2 : 1); i++) {
+					float rightOffset = twinning ? 2*i-1 : 0;
+			
+					ItemStack d1 = new ItemStack(Material.SNOWBALL);
+					ItemMeta meta = d1.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:ice_barrage"));
+					d1.setItemMeta(meta);
+					
+					ItemStack d2 = new ItemStack(Material.SNOWBALL);
+					meta = d2.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:ice_barrage_squares"));
+					d2.setItemMeta(meta);
+					
+					ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d1);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+					
+					ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d2);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
 
-					@Override
-					public void run() {
-						Quaternionf rot = new Quaternionf().rotateZ((float) Math.toRadians(10*c)); // then 45° on Y axis
-						AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
-						
-						Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
-						AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
-						
-						Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
-						display.teleport(eyeloc);
-						display.setTransformation(new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
-						display2.teleport(eyeloc);
-						display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
-						
-						if (c < 5 + 5*lvl) {
-							if (c % 3 == 0) {
-								le.getWorld().playSound(le, Sound.BLOCK_POWDER_SNOW_PLACE, 1, 1.5f);
-								Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.3f);
-								FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(250, 250, 255), 1.2f));
-								float range = (20+lvl*5)*rangeMod;
-								Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
-										le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
-										entity -> !entity.equals(le));
-								SpellManager.addSpell(spell, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
-										(loc, tick) -> {
-											return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
-													(point, entity) -> {
-														//entity.damage(5+lvl, le);
-														entity.damage(2+lvl*0.5f, source);
-														entity.setFreezeTicks((int)Math.round(25*(1+lvl)));
-														entity.setVelocity(entity.getVelocity().multiply(1/(1+lvl*0.5f)));
-														entity.addPotionEffects(effects);
-														le.getWorld().playSound(point, Sound.BLOCK_POWDER_SNOW_BREAK, 1, 1f);
-													},
-													(point, block) -> {
-														le.getWorld().playSound(point, Sound.BLOCK_POWDER_SNOW_BREAK, 1, 1f);
-													}
-													);
-										});
+					new BukkitRunnable() {
+						int c = 0;
+	
+						@Override
+						public void run() {
+							Quaternionf rot = new Quaternionf().rotateZ((float) Math.toRadians(10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+							
+							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
+							Vector right = twinning ? le.getEyeLocation().getDirection().rotateAroundY(Math.PI*0.5f).multiply(rightOffset) : new Vector(0, 0, 0);
+							
+							Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
+							display.teleport(eyeloc);
+							display.setTransformation(new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+							display2.teleport(eyeloc);
+							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+							
+							if (c < 5 + 5*lvl) {
+								if (c % 3 == 0) {
+									le.getWorld().playSound(le, Sound.BLOCK_POWDER_SNOW_PLACE, 1, 1.5f);
+									Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.3f);
+									FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(250, 250, 255), 1.2f));
+									float range = (20+lvl*5)*rangeMod;
+									Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+											le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+											entity -> !entity.equals(le));
+									SpellManager.addSpell(spell, le, eyeloc, item, rangeMod, cooldownMod, potencyMod, 
+											(loc, tick) -> {
+												return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
+														(point, entity) -> {
+															//entity.damage(5+lvl, le);
+															entity.damage(2+lvl*0.5f, source);
+															entity.setFreezeTicks((int)Math.round(25*(1+lvl)));
+															entity.setVelocity(entity.getVelocity().multiply(1/(1+lvl*0.5f)));
+															entity.addPotionEffects(effects);
+															le.getWorld().playSound(point, Sound.BLOCK_POWDER_SNOW_BREAK, 1, 1f);
+														},
+														(point, block) -> {
+															le.getWorld().playSound(point, Sound.BLOCK_POWDER_SNOW_BREAK, 1, 1f);
+														}
+														);
+											});
+								}
+							} else {
+								display.remove();
+								display2.remove();
+								cancel();
+								return;
 							}
-						} else {
-							display.remove();
-							display2.remove();
-							cancel();
-							return;
+							
+							c++;
 						}
 						
-						c++;
-					}
-					
-				}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
-				
+					}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+				}
 				break;
 			}
 			case "Snowstorm":
 			{
 				success = true;
-				cooldown = 80;
+				cooldown = 80 + (twinning ? 20 : 0);
 				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
 				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
 				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
@@ -2034,6 +2062,8 @@ public class Spell {
 					ItemMeta meta = getItemMeta();
 					meta.setItemModel(NamespacedKey.fromString("mage_helmet"));
 					meta.addEnchant(Enchantment.PROTECTION, (int)lvl, true);
+					meta.addEnchant(Enchantment.BINDING_CURSE, 1, true);
+					meta.addEnchant(Enchantment.VANISHING_CURSE, 1, true);
 					meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Mage Helmet");
 					if (lvl > 2)
 						meta.addEnchant(Enchantment.AQUA_AFFINITY, 1, true);
@@ -2048,6 +2078,8 @@ public class Spell {
 					ItemMeta meta = getItemMeta();
 					meta.setItemModel(NamespacedKey.fromString("mage_chestplate"));
 					meta.addEnchant(Enchantment.PROTECTION, (int)lvl, true);
+					meta.addEnchant(Enchantment.BINDING_CURSE, 1, true);
+					meta.addEnchant(Enchantment.VANISHING_CURSE, 1, true);
 					meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Mage Chestplate");
 					
 					Damageable dmg = (Damageable) meta;
@@ -2060,6 +2092,8 @@ public class Spell {
 					ItemMeta meta = getItemMeta();
 					meta.setItemModel(NamespacedKey.fromString("mage_leggings"));
 					meta.addEnchant(Enchantment.PROTECTION, (int)lvl, true);
+					meta.addEnchant(Enchantment.BINDING_CURSE, 1, true);
+					meta.addEnchant(Enchantment.VANISHING_CURSE, 1, true);
 					meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Mage Leggings");
 					
 					Damageable dmg = (Damageable) meta;
@@ -2072,6 +2106,8 @@ public class Spell {
 					ItemMeta meta = getItemMeta();
 					meta.setItemModel(NamespacedKey.fromString("mage_boots"));
 					meta.addEnchant(Enchantment.PROTECTION, (int)lvl, true);
+					meta.addEnchant(Enchantment.BINDING_CURSE, 1, true);
+					meta.addEnchant(Enchantment.VANISHING_CURSE, 1, true);
 					meta.addEnchant(Enchantment.FEATHER_FALLING, (int)lvl, true);
 					meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Mage Boots");
 					

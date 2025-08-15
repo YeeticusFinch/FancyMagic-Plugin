@@ -354,12 +354,18 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     		}
     		ItemMeta meta = item.getItemMeta();
     		if (meta.getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "focus"), PersistentDataType.INTEGER) > 0) {
+    			player.sendActionBar(ChatColor.LIGHT_PURPLE + spell.data.name);
+    			
     			NBTItem nbt = new NBTItem(item);
     			float rangeMod = nbt.getFloat("Range");
     			float cooldownMod = nbt.getFloat("Cooldown");
     			float potencyMod = nbt.getFloat("Potency");
-    			player.sendActionBar(ChatColor.LIGHT_PURPLE + spell.data.name);
-    			return spell.cast(player, item, rangeMod, cooldownMod, potencyMod);
+    			if (focusEnchants.get("potency") != null && item.getEnchantmentLevel(focusEnchants.get("potency")) > 0)
+    				potencyMod += ((Potency)ENCHANTS.get(Potency.KEY)).getPotencyPerLevel()*item.getEnchantmentLevel(focusEnchants.get("potency"));
+    			if (focusEnchants.get("spelltwinning") != null && item.getEnchantmentLevel(focusEnchants.get("spelltwinning")) > 0)
+    				return spell.cast(player, item, rangeMod, cooldownMod, potencyMod, true);
+    			return spell.cast(player, item, rangeMod, cooldownMod, potencyMod, false);
+    			
     		}
     	}
     	return 40;
@@ -947,7 +953,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
                 spellbook.getItemMeta().getPersistentDataContainer().has(
                     new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER)) {
                 
-                List<SpellData> spells = sbMenu.loadPreparedSpells(spellbook);
+                List<SpellData> spells = SpellBookMenu.loadPreparedSpells(spellbook);
                 if (!spells.isEmpty()) {
                     // Create LLL click pattern for first spell
                     List<Boolean> lllPattern = new ArrayList<>();
@@ -959,7 +965,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
                     if (spell != null) {
                         int cooldown = castSpell(player, spell, droppedItem);
                         player.setCooldown(droppedItem, cooldown);
-                        player.sendMessage(ChatColor.AQUA + "Quickcast activated!");
+                        //player.sendMessage(ChatColor.AQUA + "Quickcast activated!");
                     }
                 }
             }
