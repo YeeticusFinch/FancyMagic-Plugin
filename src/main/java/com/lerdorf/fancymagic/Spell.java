@@ -23,6 +23,8 @@ import org.bukkit.Particle.DustOptions;
 import org.bukkit.Rotation;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Levelled;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
@@ -31,6 +33,7 @@ import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.ItemDisplay.ItemDisplayTransform;
 import org.bukkit.entity.LightningStrike;
@@ -321,7 +324,7 @@ public class Spell {
 				put('G', Material.DIAMOND);
 			}},
 			2,
-			new Material[] {Material.WATER_BUCKET}, // hotbar requirements
+			new Material[] {Material.WATER_BUCKET, Material.BUCKET}, // hotbar requirements
 			null, // inventory requirements
 			"Places your water at a ranged distance on your crosshair."
 			);
@@ -339,7 +342,7 @@ public class Spell {
 				put('G', Material.DIAMOND);
 			}},
 			2,
-			new Material[] {Material.POWDER_SNOW_BUCKET}, // hotbar requirements
+			new Material[] {Material.POWDER_SNOW_BUCKET, Material.BUCKET}, // hotbar requirements
 			null, // inventory requirements
 			"Places your powder snow at a ranged distance on your crosshair."
 			);
@@ -357,7 +360,7 @@ public class Spell {
 				put('G', Material.DIAMOND);
 			}},
 			3,
-			new Material[] {Material.LAVA_BUCKET}, // hotbar requirements
+			new Material[] {Material.LAVA_BUCKET, Material.BUCKET}, // hotbar requirements
 			null, // inventory requirements
 			"Places your lava at a ranged distance on your crosshair."
 			);
@@ -610,6 +613,51 @@ public class Spell {
 			new Material[] {Material.HONEY_BOTTLE}, // hotbar requirements
 			null, // inventory requirements
 			"Lets you run on walls."
+			);
+	public static final SpellType NECROTIC_BOLT = new SpellType(
+			"Necrotic Bolt",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.ROTTEN_FLESH);
+				put('F', Material.BONE);
+				put('G', Material.AMETHYST_SHARD);
+			}},
+			1,
+			null, // hotbar requirements
+			new Material[] {Material.ROTTEN_FLESH, Material.BONE}, // inventory requirements
+			"Fires a blast of necrotic energy at your target that deals weakness and hunger."
+			);
+	public static final SpellType NECROTIC_STORM = new SpellType(
+			"Necrotic Storm",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.BONE_BLOCK);
+				put('F', Material.SKELETON_SKULL);
+				put('G', Material.DIAMOND);
+			}},
+			4,
+			new Material[] {Material.ROTTEN_FLESH, Material.BONE}, // hotbar requirements
+			null, // inventory requirements
+			"Fires a blast of necrotic energy at your target that deals weakness and hunger."
+			);
+	public static final SpellType POISON_CLOUD = new SpellType(
+			"Poison Cloud",
+			null,
+			null,
+			4,
+			new Material[] {Material.FERMENTED_SPIDER_EYE}, // hotbar requirements
+			null, // inventory requirements
+			"Creates a cloud of poison at a ranged point."
 			);
 	
 	// Spell.java
@@ -1806,9 +1854,11 @@ public class Spell {
 							point = Util.getSafeTeleport(point, 1.5);
 				            if (isPickingUp) {
 				            	if (point.getBlock().getType() == liquid) {
-				            		bucket.setType(full);
-				            		point.getBlock().setType(Material.AIR);
-				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL, 1, 1);
+				            		if (isSourceBlock(point.getBlock())) {
+					            		bucket.setType(full);
+					            		point.getBlock().setType(Material.AIR);
+					            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL, 1, 1);
+				            		}
 				            	}
 				            } else {
 				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
@@ -1822,9 +1872,11 @@ public class Spell {
 							point = Util.getSafeTeleport(point, 1.5);
 				            if (isPickingUp) {
 				            	if (point.getBlock().getType() == liquid) {
-				            		bucket.setType(full);
-				            		point.getBlock().setType(Material.AIR);
-				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL, 1, 1);
+				            		if (isSourceBlock(point.getBlock())) {
+					            		bucket.setType(full);
+					            		point.getBlock().setType(Material.AIR);
+					            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL, 1, 1);
+				            		}
 				            	}
 				            } else {
 				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
@@ -1906,8 +1958,8 @@ public class Spell {
 			}
 			case "Transmute Lava":
 			{
-				Material liquid = Material.WATER;
-				Material full = Material.WATER_BUCKET;
+				Material liquid = Material.LAVA;
+				Material full = Material.LAVA_BUCKET;
 				Material empty = Material.BUCKET;
 				boolean pickup = false;
 				if (le instanceof Player player) {
@@ -1942,9 +1994,11 @@ public class Spell {
 							point = Util.getSafeTeleport(point, 1.5);
 				            if (isPickingUp) {
 				            	if (point.getBlock().getType() == liquid) {
-				            		bucket.setType(full);
-				            		point.getBlock().setType(Material.AIR);
-				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL, 1, 1);
+				            		if (isSourceBlock(point.getBlock())) {
+					            		bucket.setType(full);
+					            		point.getBlock().setType(Material.AIR);
+					            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL, 1, 1);
+				            		}
 				            	}
 				            } else {
 				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
@@ -1958,9 +2012,11 @@ public class Spell {
 							point = Util.getSafeTeleport(point, 1.5);
 				            if (isPickingUp) {
 				            	if (point.getBlock().getType() == liquid) {
-				            		bucket.setType(full);
-				            		point.getBlock().setType(Material.AIR);
-				            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL_LAVA, 1, 1);
+				            		if (isSourceBlock(point.getBlock())) {
+					            		bucket.setType(full);
+					            		point.getBlock().setType(Material.AIR);
+					            		le.getWorld().playSound(le.getEyeLocation(), Sound.ITEM_BUCKET_FILL_LAVA, 1, 1);
+				            		}
 				            	}
 				            } else {
 				            	if (point.getBlock().getType() != Material.AIR) point.getBlock().breakNaturally();
@@ -1973,11 +2029,301 @@ public class Spell {
 				break;
 			}
 			case "Mage Armor":
+			{
+				ItemStack mageHelmet = new ItemStack(Material.IRON_HELMET) {{
+					ItemMeta meta = getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("mage_helmet"));
+					meta.addEnchant(Enchantment.PROTECTION, (int)lvl, true);
+					meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Mage Helmet");
+					if (lvl > 2)
+						meta.addEnchant(Enchantment.AQUA_AFFINITY, 1, true);
+
+					Damageable dmg = (Damageable) meta;
+					dmg.setMaxDamage(64);
+					
+					setItemMeta(dmg);
+				}};
+				Util.setEquippable(mageHelmet, "mage");
+				ItemStack mageChestplate = new ItemStack(Material.IRON_CHESTPLATE) {{
+					ItemMeta meta = getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("mage_chestplate"));
+					meta.addEnchant(Enchantment.PROTECTION, (int)lvl, true);
+					meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Mage Chestplate");
+					
+					Damageable dmg = (Damageable) meta;
+					dmg.setMaxDamage(64);
+					
+					setItemMeta(dmg);
+				}};
+				Util.setEquippable(mageChestplate, "mage");
+				ItemStack mageLeggings = new ItemStack(Material.IRON_LEGGINGS) {{
+					ItemMeta meta = getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("mage_leggings"));
+					meta.addEnchant(Enchantment.PROTECTION, (int)lvl, true);
+					meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Mage Leggings");
+					
+					Damageable dmg = (Damageable) meta;
+					dmg.setMaxDamage(64);
+					
+					setItemMeta(dmg);
+				}};
+				Util.setEquippable(mageLeggings, "mage");
+				ItemStack mageBoots = new ItemStack(Material.IRON_BOOTS) {{
+					ItemMeta meta = getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("mage_boots"));
+					meta.addEnchant(Enchantment.PROTECTION, (int)lvl, true);
+					meta.addEnchant(Enchantment.FEATHER_FALLING, (int)lvl, true);
+					meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Mage Boots");
+					
+					Damageable dmg = (Damageable) meta;
+					dmg.setMaxDamage(64);
+					
+					setItemMeta(dmg);
+				}};
+				Util.setEquippable(mageBoots, "mage");
+				
+				final boolean swapBoots;
+				final boolean swapLeggings;
+				final boolean swapChestplate;
+				final boolean swapHelmet;
+				
+				if (le.getEquipment().getBoots() == null || le.getEquipment().getBoots().getType() == Material.AIR) {
+					le.getEquipment().setBoots(mageBoots);
+					swapBoots = true;
+					success = true;
+					le.getWorld().playSound(le.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1, 0.7f);
+				} else swapBoots = false;
+				if (le.getEquipment().getLeggings() == null || le.getEquipment().getLeggings().getType() == Material.AIR) {
+					le.getEquipment().setLeggings(mageLeggings);
+					swapLeggings = true;
+					success = true;
+					le.getWorld().playSound(le.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1, 0.7f);
+				} else swapLeggings = false;
+				if (le.getEquipment().getChestplate() == null || le.getEquipment().getChestplate().getType() == Material.AIR) {
+					le.getEquipment().setChestplate(mageChestplate);
+					swapChestplate = true;
+					success = true;
+					le.getWorld().playSound(le.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1, 0.7f);
+				} else swapChestplate = false;
+				if (le.getEquipment().getHelmet() == null || le.getEquipment().getHelmet().getType() == Material.AIR) {
+					le.getEquipment().setHelmet(mageHelmet);
+					swapHelmet = true;
+					success = true;
+					le.getWorld().playSound(le.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1, 0.7f);
+				} else
+					swapHelmet = false;
+				
+				int duration = (int)(1200 + 900 * lvl);
+				
+				if (success) {
+					
+					cooldown = 50;
+					
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+		            	if (swapHelmet && Util.modelContains(le.getEquipment().getHelmet(), "mage")) {
+		            		le.getEquipment().setHelmet(null);
+		            		le.getWorld().playSound(le.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1, 2);
+		            	}
+		            	if (swapLeggings && Util.modelContains(le.getEquipment().getLeggings(), "mage")) {
+		            		le.getEquipment().setLeggings(null);
+		            		le.getWorld().playSound(le.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1, 2);
+		            	}
+		            	if (swapChestplate && Util.modelContains(le.getEquipment().getChestplate(), "mage")) {
+		            		le.getEquipment().setChestplate(null);
+		            		le.getWorld().playSound(le.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1, 2);
+		            	}
+		            	if (swapBoots && Util.modelContains(le.getEquipment().getBoots(), "mage")) {
+		            		le.getEquipment().setBoots(null);
+		            		le.getWorld().playSound(le.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 1, 2);
+		            	}
+			        }, duration); 
+					
+				} else {
+					if (le instanceof Player player) {
+						player.sendMessage(ChatColor.RED + "Mage Armor only works when you aren't wearing armor");
+						cooldown = 20;
+					}
+				}
+				
 				break;
+			}
 			case "Shield":
+			{
+				success = true;
+				cooldown = 30;
+				
+				le.addScoreboardTag("shielding");
+				
+				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
+				Interaction shield = (Interaction) le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation().getDirection()), Interaction.class);
+				
+				shield.setInteractionWidth(2);
+				shield.setInteractionHeight(2);
+				shield.setPersistent(true);
+				shield.addScoreboardTag("shield");
+				
+				shield.setMetadata("owner", new FixedMetadataValue(FancyMagic.plugin, le));
+				
+				ItemStack d1 = new ItemStack(Material.FIRE_CHARGE);
+				ItemMeta meta = d1.getItemMeta();
+				meta.setItemModel(NamespacedKey.fromString("fsp:fire_barrage"));
+				d1.setItemMeta(meta);
+				
+				ItemStack d2 = new ItemStack(Material.FIRE_CHARGE);
+				meta = d2.getItemMeta();
+				meta.setItemModel(NamespacedKey.fromString("fsp:fire_barrage_squares"));
+				d2.setItemMeta(meta);
+
+				ItemStack d3 = new ItemStack(Material.SNOWBALL);
+				meta = d3.getItemMeta();
+				meta.setItemModel(NamespacedKey.fromString("fsp:snow_barrage"));
+				d3.setItemMeta(meta);
+				
+				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
+				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
+
+				// Convert to AxisAngle
+				AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+				
+				ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
+						ItemDisplay.class, entity -> {
+							// customize the entity!
+							entity.setItemStack(d1);
+							entity.setTransformation(
+									new Transformation(new Vector3f(), axisAngle, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+							entity.addScoreboardTag("shield_display");
+						});	
+				
+				ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
+						ItemDisplay.class, entity -> {
+							// customize the entity!
+							entity.setItemStack(d2);
+							entity.setTransformation(
+									new Transformation(new Vector3f(), axisAngle, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+							entity.addScoreboardTag("shield_display");
+						});
+				
+				ItemDisplay display3 = eyeloc.getWorld().spawn(eyeloc,
+						ItemDisplay.class, entity -> {
+							// customize the entity!
+							entity.setItemStack(d3);
+							entity.setTransformation(
+									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.8f, 0.8f, 0.8f), new AxisAngle4f()));
+							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+							entity.addScoreboardTag("shield_display");
+						});
+				
+				ItemDisplay display4 = eyeloc.getWorld().spawn(eyeloc,
+						ItemDisplay.class, entity -> {
+							// customize the entity!
+							entity.setItemStack(d2);
+							entity.setTransformation(
+									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.8f, 0.8f, 0.8f), new AxisAngle4f()));
+							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+							entity.addScoreboardTag("shield_display");
+		
+						});
+
+				ItemDisplay display5 = eyeloc.getWorld().spawn(eyeloc,
+						ItemDisplay.class, entity -> {
+							// customize the entity!
+							entity.setItemStack(d1);
+							entity.setTransformation(
+									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+							entity.addScoreboardTag("shield_display");
+						});
+				
+				ItemDisplay display6 = eyeloc.getWorld().spawn(eyeloc,
+						ItemDisplay.class, entity -> {
+							// customize the entity!
+							entity.setItemStack(d2);
+							entity.setTransformation(
+									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+							entity.addScoreboardTag("shield_display");
+		
+						});
+				ItemDisplay display7 = eyeloc.getWorld().spawn(eyeloc,
+						ItemDisplay.class, entity -> {
+							// customize the entity!
+							entity.setItemStack(d3);
+							entity.setTransformation(
+									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.4f, 0.4f, 0.4f), new AxisAngle4f()));
+							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+							entity.addScoreboardTag("shield_display");
+						});
+				
+				ItemDisplay display8 = eyeloc.getWorld().spawn(eyeloc,
+						ItemDisplay.class, entity -> {
+							// customize the entity!
+							entity.setItemStack(d2);
+							entity.setTransformation(
+									new Transformation(new Vector3f(), axisAngle, new Vector3f(0.4f, 0.4f, 0.4f), new AxisAngle4f()));
+							entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+							entity.addScoreboardTag("shield_display");
+		
+						});
+				
+				int duration = (int)(20 + 15*lvl);
+				float offset = 1.4f;
+				
+				SpellManager.addSpell(this, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
+						(loc, tick) -> {
+							Quaternionf rot1 = new Quaternionf().rotateZ((float) Math.toRadians(10*tick)); // then 45° on Y axis
+							AxisAngle4f axisAngle1 = new AxisAngle4f().set(rot1);
+							
+							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*tick)); // then 45° on Y axis
+							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
+							
+							
+							
+							
+							loc = le.getEyeLocation().add(le.getEyeLocation().getDirection().multiply(offset));
+							shield.teleport(loc);
+							display.teleport(loc);
+							display.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+							display2.teleport(loc);
+							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(1f, 1f, 1f), new AxisAngle4f()));
+							display3.teleport(loc);
+							display3.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(0.8f, 0.8f, 0.8f), new AxisAngle4f()));
+							display4.teleport(loc);
+							display4.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.8f, 0.8f, 0.8f), new AxisAngle4f()));
+							display5.teleport(loc);
+							display5.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(0.6f, 0.6f, 0.6f), new AxisAngle4f()));
+							display6.teleport(loc);
+							display6.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.6f, 0.6f, 0.6f), new AxisAngle4f()));
+							display7.teleport(loc);
+							display7.setTransformation(new Transformation(new Vector3f(), axisAngle1, new Vector3f(0.4f, 0.4f, 0.4f), new AxisAngle4f()));
+							display8.teleport(loc);
+							display8.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.4f, 0.4f, 0.4f), new AxisAngle4f()));
+							
+							if (tick > duration || shield.getScoreboardTags().contains("hit")) {
+								le.removeScoreboardTag("shielding");
+								shield.remove();
+								display.remove();
+								display2.remove();
+								display3.remove();
+								display4.remove();
+								return false;
+							} else
+								return true;
+						}
+						);
+				
 				break;
+			}
 			case "Magic Missile":
+			{
+				success = magicMissile(le, lvl, false, rangeMod, cooldownMod, potencyMod, item);
+				if (success) {
+					cooldown = 40;
+				} else 
+					cooldown = 20;
 				break;
+			}
 			case "Prismatic Bolt":
 				break;
 			case "Enervation":
@@ -1992,7 +2338,24 @@ public class Spell {
 				break;
 			case "Thunderwave":
 				break;
-				
+			case "Plant Growth":
+				break;
+			case "Transmute Plants":
+				break;
+			case "Elemental Ward":
+				break;
+			case "Primordial Ward":
+				break;
+			case "Haste":
+				break;
+			case "Wall Running":
+				break;
+			case "Necrotic Bolt":
+				break;
+			case "Necrotic Storm":
+				break;
+			case "Poison Cloud":
+				break;
 		}
 		
 		if (success) {
@@ -2001,6 +2364,117 @@ public class Spell {
 		
 		return (int)Math.max(cooldown * cooldownMod, 1);
 		
+	}
+	
+	public boolean isSourceBlock(Block block) {
+	    BlockData data = block.getBlockData();
+	    if (data instanceof Levelled levelled) {
+	        // Fluid source blocks have level 0
+	        return levelled.getLevel() == 0;
+	    }
+	    return false;
+	}
+	
+	private boolean magicMissile(LivingEntity entity, float level, boolean melee, float rangeMod, float cooldownMod, float potencyMod, ItemStack item) {
+		ArrayList<LivingEntity> targets = new ArrayList<LivingEntity>();
+		
+		double range = 40*rangeMod;
+	    int numMissiles = (int)(level + 3);
+		
+		// Get the direction the entity is looking at
+	    Vector direction = entity.getEyeLocation().getDirection().normalize();
+
+	    // Loop through all nearby entities
+	    if (melee) {
+	    	Collection<Entity> nearbyEntities = entity.getWorld().getNearbyEntities(entity.getLocation(), range/2, range/2, range/2);
+	    	for (Entity nearbyEntity : nearbyEntities) { // Adjust radius as needed
+		        if (nearbyEntity instanceof LivingEntity le && le != entity) {
+		        	
+		                targets.add(le);
+	
+		                // Limit to a maximum of 5 targets
+		                if (targets.size() >= numMissiles) {
+		                    break;
+		                }
+		            
+		        }
+		    }
+	    } else {
+		    Collection<Entity> nearbyEntities = entity.getWorld().getNearbyEntities(entity.getLocation().add(direction.clone().multiply(range/2)), range, range, range);
+		    for (Entity nearbyEntity : nearbyEntities) { // Adjust radius as needed
+		        if (nearbyEntity instanceof LivingEntity le && le != entity) {
+		        	
+		            // Get vector from the entity to the target
+		            Vector toTarget = le.getLocation().toVector().subtract(entity.getLocation().toVector()).normalize();
+	
+		            // Calculate the angle between the direction and the target
+		            double angle = direction.angle(toTarget);
+	
+		            // Check if the angle is within 10 degrees (converted to radians)
+		            if (Math.toDegrees(angle) <= 10) {
+		                targets.add(le);
+	
+		                // Limit to a maximum of 5 targets
+		                if (targets.size() >= numMissiles) {
+		                    break;
+		                }
+		            }
+		        }
+		    }
+	    }
+		
+	    if (targets.size() > 0) {
+	    	DamageSource source = DamageSource.builder(DamageType.MAGIC)
+				    .withDirectEntity(entity) // the entity causing the damage
+				    .build();
+	    	double damage = ((level*level)/1.4+1.3)*3.3;
+	    	FancyParticle particle = new FancyParticle(Particle.END_ROD, 1, 0, 0, 0, 0);
+	    	Collection<LivingEntity> nearbyEntities = entity.getWorld().getNearbyLivingEntities(
+					entity.getEyeLocation(), range * 2, range * 2, range * 2,
+					e -> !e.equals(entity));
+	    	for (int i = 0; i < numMissiles; i++) {
+	    		Vector randDir = (new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).normalize();
+	    		
+	    		final Vector vel = (new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).multiply(0.5+level*0.1f);
+
+				final LivingEntity target = targets.get(i%targets.size());
+				SpellManager.addSpell(this, entity, entity.getEyeLocation().add(vel), item, rangeMod, cooldownMod, potencyMod, 
+						(loc, tick) -> {
+							double speed = vel.length();
+							Vector targetVel = target.getEyeLocation().toVector().add(target.getVelocity()).subtract(loc.toVector().add(vel)).multiply(speed);
+							vel.add(targetVel.subtract(vel).normalize().multiply(0.4*speed)).normalize().multiply(speed);
+							return laserTick(nearbyEntities, tick, entity, loc, vel, particle, range, false, 0.5, true, false,
+									(point, e) -> {
+										//entity.damage(5+lvl, le);
+										entity.damage(3+level*1.2f, source);
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+										entity.getWorld().playSound(point, Sound.ENTITY_SHULKER_BULLET_HIT, 1, 1.4f);
+									},
+									(point, block) -> {
+										
+									}
+									);
+						});
+	    		
+	    		
+	    		//Bullet missile = new Bullet(randDir.multiply(Math.random()+0.5), entity.getEyeLocation().add(randDir), false, Particle.END_ROD, 50, 0.2f, 25, entity, this, (int)damage);
+	    		//missile.target = targets.get(i%targets.size());
+	    		/*
+	    		ShulkerBullet missile = (ShulkerBullet) entity.getWorld().spawn(entity.getEyeLocation().add(direction), ShulkerBullet.class);
+	    		missile.setInvulnerable(true);
+	    		missile.setShooter(entity);
+	    		missile.setTarget(targets.get(i%targets.size()));
+	    		magicMissiles.put(missile, damage);
+	    		*/
+	    	}
+	    	//for (Player player : Bukkit.getOnlinePlayers())
+	    	entity.getWorld().playSound(entity.getLocation(), Sound.ENTITY_SHULKER_SHOOT, 1.5f, 1.5f);
+	    	return true;
+	    } else if (entity instanceof Player player){
+	    	player.sendMessage(ChatColor.RED + "Please aim at a target to cast Magic Missile");
+	    	return false;
+	    }
+	    return false;
 	}
 	
 	public static void particleLine(FancyParticle particle, Location l1, Location l2, float step) {

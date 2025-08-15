@@ -21,9 +21,13 @@ public class FancyMagicBootstrap implements PluginBootstrap {
 	private final Logger logger = LoggerFactory.getLogger("FancyMagic");
 	@Override
 	public void bootstrap(BootstrapContext context) {
+		logger.info("=== BOOTSTRAP STARTING ===");
+		logger.info("Bootstrap method called successfully!");
 		 try {
+			 logger.info("Initializing FancyEnchant...");
 	            FancyEnchant.init();
 	        } catch (IOException e) {
+	        	logger.error("Failed to initialize FancyEnchant", e);
 	            throw new RuntimeException(e);
 	        }
 

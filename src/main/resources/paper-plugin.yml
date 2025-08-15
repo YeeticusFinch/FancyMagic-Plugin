@@ -1,0 +1,9 @@
+name: FancyMagic
+version: 1.0
+main: com.lerdorf.fancymagic.FancyMagic
+bootstrapper: com.lerdorf.fancymagic.FancyMagicBootstrap
+api-version: '1.21.7'
+description: Fancy magic system
+authors: [carl_alex]
+softdepend:
+  - NBTAPI

@@ -171,6 +171,12 @@ public interface FancyEnchant {
         FancyMagic.initialized = true;
 
         Spellbound.create();
+        FalseLife.create();
+        Potency.create();
+        QuickCast.create();
+        Repelling.create();
+        SpellStealer.create();
+        SpellTwinning.create();
         // add other enchants here
     }
 }

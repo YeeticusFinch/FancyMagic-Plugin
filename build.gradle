@@ -1,11 +1,12 @@
 plugins {
     id 'java-library'
     id 'io.papermc.paperweight.userdev' version '2.0.0-beta.18'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
-group = 'com.lerdorf.thinwalls'
+group = 'com.lerdorf.fancymagic'
 version = '1.0'
-description = 'ThinWalls plugin'
+description = 'FancyMagic plugin'
 
 java {
     toolchain {
@@ -21,7 +22,7 @@ repositories {
 // For Minecraft 1.21.8
 dependencies {
     paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
-    compileOnly 'de.tr7zw:item-nbt-api-plugin:2.15.1'
+    implementation 'de.tr7zw:item-nbt-api-plugin:2.15.1'
     //compileOnly 'de.tr7zw:item-nbt-api-plugin:2.15.1'
     //implementation("io.papermc.paper:paper-mojangapi:1.21.8-R0.1-SNAPSHOT") // not always available
     //paperDevBundle("1.21.8-R0.1-SNAPSHOT")
@@ -36,4 +37,12 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.withType(Javadoc).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.named('shadowJar') {
+    archiveClassifier.set('')
+}
+
+tasks.build {
+    dependsOn shadowJar
 }

@@ -99,7 +99,7 @@ public class Spellbound implements FancyEnchant {
 
     @Override
     public @NotNull TagKey<ItemType> getTagForSupportedItems() {
-        return TagKey.create(RegistryKey.ITEM, Key.key("enchantio:beheading_enchantable"));
+        return TagKey.create(RegistryKey.ITEM, Key.key("fancymagic:spellbound_enchantable"));
     }
 
     @Override
@@ -137,7 +137,7 @@ public class Spellbound implements FancyEnchant {
                                 "MAINHAND"
                         )),
                 3, // max level
-                0.1 // chance to drop spell per level
+                0.05 // chance to drop spell per level
         );
 
             FancyMagic.ENCHANTS.put(Spellbound.KEY, spellboundEnchant);

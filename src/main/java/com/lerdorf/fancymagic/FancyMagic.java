@@ -8,6 +8,7 @@ import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -52,18 +54,22 @@ import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Damageable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
+import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
@@ -91,10 +97,17 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import com.lerdorf.fancymagic.SpellBookMenu.SpellData;
+import com.lerdorf.fancymagic.enchants.FalseLife;
 import com.lerdorf.fancymagic.enchants.FancyEnchant;
+import com.lerdorf.fancymagic.enchants.Potency;
+import com.lerdorf.fancymagic.enchants.QuickCast;
+import com.lerdorf.fancymagic.enchants.Repelling;
+import com.lerdorf.fancymagic.enchants.SpellStealer;
+import com.lerdorf.fancymagic.enchants.SpellTwinning;
 import com.lerdorf.fancymagic.enchants.Spellbound;
 
 import de.tr7zw.nbtapi.NBTItem;
+import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.registry.RegistryKey;
 
 import org.joml.Vector3f;
@@ -183,9 +196,38 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 	@Override
 	public void onEnable() {
 		plugin = this;
+		
+		// Manual bootstrap if automatic bootstrap didn't work
+	    if (!FancyMagic.initialized) {
+	        getLogger().warning("Bootstrap didn't run automatically, running manually...");
+	        try {
+	            // Try to run bootstrap manually during plugin enable
+	            FancyMagicBootstrap bootstrap = new FancyMagicBootstrap();
+	            FancyEnchant.init();
+	            getLogger().info("Manual bootstrap completed");
+	        } catch (Exception e) {
+	            getLogger().severe("Failed to run manual bootstrap: " + e.getMessage());
+	            e.printStackTrace();
+	        }
+	    } else {
+	        getLogger().info("Bootstrap already completed during server startup");
+	    }
+	    
+	    Bukkit.getScheduler().runTaskLater(this, () -> {
+	    	for (Key key : ENCHANTS.keySet()) {
+		        Enchantment enchant = Bukkit.getRegistry(Enchantment.class).get(key);
+		        if (enchant != null) {
+		            getLogger().info("✓ " + key.asMinimalString() + " enchantment found in registry!");
+		        } else {
+		            getLogger().severe("✗ " + key.asMinimalString() + " enchantment NOT found in registry!");
+		        }
+	    	}
+	    }, 20L); // Check 1 second after plugin enables
+		
 		getServer().getPluginManager().registerEvents(this, this);
 		
-		this.getCommand("magic").setExecutor(this);
+		this.registerCommand("magic", "Gives you a scroll", new FancyMagicCommand());
+		//this.getCommand("magic").setExecutor(this);
 
 		//this.getCommand("wall").setExecutor(this);
 
@@ -377,6 +419,40 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     }
     
     @EventHandler
+    public void onProjectileHit(ProjectileHitEvent event) {
+        if (event.getHitEntity() instanceof Interaction interaction && interaction.getScoreboardTags().contains("shield")) {
+            interaction.addScoreboardTag("hit");
+            return;
+        }
+    }
+    
+    @EventHandler
+    public void entityDamage(EntityDamageEvent event) {
+    	if (event.getEntity() instanceof Interaction interaction && interaction.getScoreboardTags().contains("shield")) {
+    		interaction.addScoreboardTag("hit");
+    		return;
+    	} else if (event.getEntity().getScoreboardTags().contains("shielding")) {
+    		Location loc = event.getDamageSource().getDamageLocation();
+    		if (loc == null)
+    			loc = event.getDamageSource().getSourceLocation();
+    		if (loc != null && loc.clone().subtract(event.getEntity().getLocation()).toVector().dot(event.getEntity().getLocation().getDirection()) > 0.5f) {
+    			event.setDamage(0);
+    			event.setCancelled(true);
+    			Collection<Entity> entities = event.getEntity().getLocation().add(event.getEntity().getLocation().getDirection()).getNearbyEntities(0, 0, 0);
+    			for (Entity e : entities) {
+    				if (e instanceof Interaction interaction && interaction.getScoreboardTags().contains("shield")) {
+    					if (interaction.hasMetadata("owner") && interaction.getMetadata("owner").get(0).value() instanceof LivingEntity owner) {
+    						interaction.addScoreboardTag("hit");
+    						return;
+    					}
+    				}
+    			}
+    			return;
+    		}
+    	}
+    }
+    
+    @EventHandler
     public void entityDamageByEntity(EntityDamageByEntityEvent event) {
     	if (event.getDamager() instanceof Player p && event.getDamageSource().getDamageType() == DamageType.PLAYER_ATTACK) {
 	    	boolean cancelEvent = use(p, false);
@@ -384,6 +460,30 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 	    		event.setCancelled(true);
 	    		return;
 	    	}
+    	}
+    	if (event.getEntity() instanceof Interaction interaction && interaction.getScoreboardTags().contains("shield")) {
+    		interaction.addScoreboardTag("hit");
+    		return;
+    	} else if (event.getEntity().getScoreboardTags().contains("shielding")) {
+    		Location loc = event.getDamageSource().getDamageLocation();
+    		if (loc == null)
+    			loc = event.getDamageSource().getSourceLocation();
+    		if (loc == null)
+    			loc = event.getDamager().getLocation();
+    		if (loc != null && loc.clone().subtract(event.getEntity().getLocation()).toVector().dot(event.getEntity().getLocation().getDirection()) > 0.5f) {
+    			event.setDamage(0);
+    			event.setCancelled(true);
+    			Collection<Entity> entities = event.getEntity().getLocation().add(event.getEntity().getLocation().getDirection()).getNearbyEntities(0, 0, 0);
+    			for (Entity e : entities) {
+    				if (e instanceof Interaction interaction && interaction.getScoreboardTags().contains("shield")) {
+    					if (interaction.hasMetadata("owner") && interaction.getMetadata("owner").get(0).value() instanceof LivingEntity owner) {
+    						interaction.addScoreboardTag("hit");
+    						return;
+    					}
+    				}
+    			}
+    			return;
+    		}
     	}
     	if (event.getEntity().getScoreboardTags().contains("fire_shield") && event.getDamager().getLocation().distance(event.getEntity().getLocation()) < 6) {
     		for (String tag : event.getEntity().getScoreboardTags()) {
@@ -531,29 +631,6 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         return result.toString();
     }
     
-    
-    @Override
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		if (!(sender instanceof Player player)) {
-			sender.sendMessage(ChatColor.RED + "Only players can use this command.");
-			return true;
-		}
-		
-		if (args.length > 0) {
-			String spellName = args[0];
-			byte level = 1;
-			if (args.length > 1)
-				level = Byte.parseByte(args[1]);
-			for (SpellType spellType : Spell.spellTypes) {
-				if (spellType.name.replace(' ', '_').equalsIgnoreCase(spellName)) {
-					player.give(spellType.getScroll(level));
-				}
-			}
-		}
-		
-		return true;
-    }
-    
     @EventHandler
     public void onSwapToOffhand(PlayerSwapHandItemsEvent event) {
         // Called when player presses F
@@ -607,6 +684,9 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         // Only target dungeon chests
         //if (!event.getLootTable().getKey().toString().equals("minecraft:chests/simple_dungeon")) return;
     	Bukkit.broadcastMessage("Generating loot for " + event.getLootTable().getKey().toString());
+    	
+    	List<ItemStack> extraLoot = Structures.getAddedLoot(event.getLootTable().getKey().toString());
+    	
         /*
         // Create your custom item
         ItemStack customSword = new ItemStack(Material.DIAMOND_SWORD);
@@ -620,6 +700,17 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         */
     }
     
+    List<Enchantment> focusEnchants = new ArrayList<Enchantment>() {{
+    	add(Enchantment.UNBREAKING);
+    	add(Bukkit.getRegistry(Enchantment.class).get(Spellbound.KEY));
+    	add(Bukkit.getRegistry(Enchantment.class).get(FalseLife.KEY));
+    	add(Bukkit.getRegistry(Enchantment.class).get(Potency.KEY));
+    	add(Bukkit.getRegistry(Enchantment.class).get(QuickCast.KEY));
+    	add(Bukkit.getRegistry(Enchantment.class).get(Repelling.KEY));
+    	add(Bukkit.getRegistry(Enchantment.class).get(SpellStealer.KEY));
+    	add(Bukkit.getRegistry(Enchantment.class).get(SpellTwinning.KEY));
+    }};
+    
     @EventHandler
     public void onPrepareItemEnchant(PrepareItemEnchantEvent event) {
         ItemStack item = event.getItem();
@@ -629,72 +720,11 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         if (isFocus(item)) {
             // Clear all default offers
             for (int i = 0; i < event.getOffers().length; i++) {
-                event.getOffers()[i] = null;
-            }
-            
-            List<EnchantmentOffer> focusOffers = new ArrayList<>();
-            
-            // Add Unbreaking (common)
-            if (random.nextFloat() < 0.4f) {
-                int level = Math.min(3, random.nextInt(3) + 1);
-                int cost = 10 + level * 5 + random.nextInt(10);
-                focusOffers.add(new EnchantmentOffer(Enchantment.UNBREAKING, level, cost));
-            }
-            
-            // Add Spellbound (rare) - get the registered enchantment
-            Enchantment spellboundEnchant = Bukkit.getRegistry(Enchantment.class).get(Spellbound.KEY);
-            if (spellboundEnchant != null && random.nextFloat() < 0.2f) {
-                int level = Math.min(3, random.nextInt(2) + 1); // Level 1-2 for rarity
-                int cost = 25 + level * 10 + random.nextInt(15);
-                focusOffers.add(new EnchantmentOffer(spellboundEnchant, level, cost));
-            }
-            
-            // Add Quick Cast (if you have it registered)
-            // Enchantment quickCastEnchant = Bukkit.getRegistry(RegistryKey.ENCHANTMENT).get(QuickCast.KEY);
-            // if (quickCastEnchant != null && random.nextFloat() < 0.15f) {
-            //     focusOffers.add(new EnchantmentOffer(quickCastEnchant, 1, 30 + random.nextInt(20)));
-            // }
-            
-            // Add False Life (if you have it registered)
-            // Enchantment falseLifeEnchant = Bukkit.getRegistry(RegistryKey.ENCHANTMENT).get(FalseLife.KEY);
-            // if (falseLifeEnchant != null && random.nextFloat() < 0.18f) {
-            //     int level = Math.min(2, random.nextInt(2) + 1);
-            //     focusOffers.add(new EnchantmentOffer(falseLifeEnchant, level, 20 + level * 8));
-            // }
-            
-            // Assign offers to the event (up to 3)
-            for (int i = 0; i < Math.min(3, focusOffers.size()); i++) {
-                event.getOffers()[i] = focusOffers.get(i);
-            }
-            
-            // If no custom offers, add at least Unbreaking
-            if (focusOffers.isEmpty()) {
-                event.getOffers()[0] = new EnchantmentOffer(Enchantment.UNBREAKING, 1, 15);
-            }
-            
-        } else if (item.getType().name().contains("SWORD") && !isFocus(item)) {
-            // For regular swords, add spellbound as a rare option
-        	Enchantment spellboundEnchant = Bukkit.getRegistry(Enchantment.class).get(Spellbound.KEY);
-            if (spellboundEnchant != null && random.nextFloat() < 0.12f) { // 12% chance
-                // Find an empty slot or replace the lowest cost enchantment
-                int replaceIndex = -1;
-                int lowestCost = Integer.MAX_VALUE;
-                
-                for (int i = 0; i < event.getOffers().length; i++) {
-                    if (event.getOffers()[i] == null) {
-                        replaceIndex = i;
-                        break;
-                    } else if (event.getOffers()[i].getCost() < lowestCost) {
-                        lowestCost = event.getOffers()[i].getCost();
-                        replaceIndex = i;
-                    }
-                }
-                
-                if (replaceIndex != -1) {
-                    int level = Math.min(3, random.nextInt(2) + 1);
-                    int cost = 30 + level * 12 + random.nextInt(20);
-                    event.getOffers()[replaceIndex] = new EnchantmentOffer(spellboundEnchant, level, cost);
-                }
+                //event.getOffers()[i] = null;
+                event.getOffers()[i].setEnchantment(focusEnchants.get((int)(Math.random()*focusEnchants.size())));
+                int cost = event.getOffers()[i].getCost();
+                int maxLevel = event.getOffers()[i].getEnchantment().getMaxLevel();
+                event.getOffers()[i].setEnchantmentLevel((int)Math.clamp((((float)cost)/30f) * maxLevel, 1, maxLevel));
             }
         }
     }
@@ -702,7 +732,34 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     @EventHandler
     public void onEnchantItem(EnchantItemEvent event) {
         ItemStack item = event.getItem();
-        
+        if (isFocus(item)) {
+            // Clear all default offers
+        	
+        	Map<Enchantment, Integer> toAdd = new HashMap<>();
+        	Iterator<Map.Entry<Enchantment, Integer>> it = event.getEnchantsToAdd().entrySet().iterator();
+
+        	while (it.hasNext()) {
+        	    var entry = it.next();
+        	    Enchantment ench = entry.getKey();
+        	    int level = entry.getValue();
+
+        	    if (focusEnchants.contains(ench)) {
+        	        continue;
+        	    } else {
+        	        Enchantment newEnch = focusEnchants.get((int)(Math.random() * focusEnchants.size()));
+        	        if (event.getEnchantsToAdd().containsKey(newEnch) || toAdd.containsKey(newEnch)) {
+        	            it.remove();
+        	        } else {
+        	            int maxLevel = newEnch.getMaxLevel();
+        	            toAdd.put(newEnch, (int)Math.clamp((((float)level)/ench.getMaxLevel()) * maxLevel, 1, maxLevel));
+        	            it.remove(); // safely remove the old entry
+        	        }
+        	    }
+        	}
+
+        	// Apply the changes after iteration
+        	event.getEnchantsToAdd().putAll(toAdd);
+        }
     }
 
     @EventHandler
@@ -741,7 +798,10 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 		                	event.getDrops().add(Spell.FIRE_RESISTANCE.getScroll());
 		                	break;
 		                case EntityType.STRAY:
-		                	event.getDrops().add(Spell.FREEZE.getScroll());
+		                	if (Math.random() < 0.7)
+		                		event.getDrops().add(Spell.FREEZE.getScroll());
+		                	else
+		                		event.getDrops().add(Spell.ICE_KNIFE.getScroll());
 		                	break;
 		                case EntityType.ELDER_GUARDIAN:
 		                	event.getDrops().add(Spell.CHAIN_LIGHTNING.getScroll());
@@ -781,11 +841,23 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 		                	if (event.getEntity() instanceof Zombie zomb && zomb.isBaby()) {
 		                		event.getDrops().add(Spell.HASTE.getScroll());
 		                	} else {
-		                		
+		                		event.getDrops().add(Spell.NECROTIC_BOLT.getScroll());
 		                	}
+		                	break;
+		                case EntityType.SKELETON:
+		                	event.getDrops().add(Spell.NECROTIC_BOLT.getScroll());
 		                	break;
 		                case EntityType.SPIDER:
 		                	event.getDrops().add(Spell.WALL_RUNNING.getScroll());
+		                	break;
+		                case EntityType.CAVE_SPIDER:
+		                	event.getDrops().add(Spell.POISON_SPRAY.getScroll());
+		                	break;
+		                case EntityType.BOGGED:
+		                	if (Math.random() < 0.6)
+		                		event.getDrops().add(Spell.POISON_CLOUD.getScroll());
+		                	else
+		                		event.getDrops().add(Spell.POISON_SPRAY.getScroll());
 		                	break;
 						default:
 							break;
@@ -800,7 +872,8 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         Player player = event.getPlayer();
         ItemStack droppedItem = event.getItemDrop().getItemStack();
         
-        if (isFocus(droppedItem) /* && droppedItem has the QuickCast enchant */) {
+        Enchantment quickcast = Bukkit.getRegistry(Enchantment.class).get(QuickCast.KEY);
+        if (isFocus(droppedItem) && quickcast != null && droppedItem.containsEnchantment(quickcast)) {
             event.setCancelled(true); // Cancel the drop
             
             // Cast the LLL spell (index 0)
@@ -838,7 +911,8 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
             ItemStack oldItem = player.getInventory().getItem(event.getPreviousSlot());
             
             // Remove false life from old item
-            if (isFocus(oldItem) /* && oldItem has the FalseLife enchant*/) {
+            Enchantment falselife = Bukkit.getRegistry(Enchantment.class).get(FalseLife.KEY);
+            if (isFocus(oldItem) && falselife != null && oldItem.containsEnchantment(falselife)) {
                 if (falseLifePlayers.contains(player.getUniqueId())) {
                     player.removePotionEffect(PotionEffectType.ABSORPTION);
                     falseLifePlayers.remove(player.getUniqueId());
@@ -846,9 +920,9 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
             }
             
             // Add false life from new item
-            if (isFocus(newItem)/* && newItem has the FalseLife enchant */) {
-                int level = 1; // get false life level
-                player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, Integer.MAX_VALUE, level - 1));
+            if (isFocus(newItem) && falselife != null && newItem.containsEnchantment(falselife)) {
+                int level = newItem.getEnchantmentLevel(falselife);
+                player.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, Integer.MAX_VALUE, level - 1));
                 falseLifePlayers.add(player.getUniqueId());
             }
         }, 1L);
