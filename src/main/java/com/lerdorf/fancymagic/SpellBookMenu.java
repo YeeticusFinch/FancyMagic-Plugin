@@ -232,12 +232,22 @@ public class SpellBookMenu implements Listener {
                 List<SpellData> prepared = loadPreparedSpells(spellBook);
                 e.setCancelled(true); // Always cancel the "Add Spell" button
                 ItemStack scroll = e.getInventory().getItem(13);
-                while (scroll != null && scroll.getAmount() > 0) {
-                	player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-                    addSpell(getMetaSpellBook(player), scroll);
-                    player.sendMessage("§aSpell added!");
-                    //e.getInventory().setItem(13, null); // Remove the scroll after adding
-                    scroll.setAmount(scroll.getAmount()-1);
+                if (FancyMagic.isScroll(scroll)) {
+	                while (scroll != null && scroll.getAmount() > 0) {
+	                	player.playSound(player, Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+	                    addSpell(getMetaSpellBook(player), scroll);
+	                    player.sendMessage("§aSpell added!");
+	                    //e.getInventory().setItem(13, null); // Remove the scroll after adding
+	                    scroll.setAmount(scroll.getAmount()-1);
+	                }
+                } else if (FancyMagic.isSpellbook(scroll)) {
+                	List<SpellData> newSpells = loadSpells(scroll);
+                	for (SpellData spellData : newSpells) {
+                		Items.addSpell(spellBook, spellData.name, spellData.level);
+                	}
+                	player.sendMessage("§aAdded spells from spellbook");
+                } else {
+                	player.sendMessage(ChatColor.RED + "Error: Invalid item");
                 }
                 List<SpellData> spells = loadSpells(spellBook);
                 List<SpellData> newPrepared = new ArrayList<SpellData>();
