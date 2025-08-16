@@ -249,6 +249,15 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 		 * } }.runTaskTimer(this, 0L, 1L); // Run every 1 tick
 		 */
 
+		focusEnchants.put("unbreaking", Enchantment.UNBREAKING);
+		focusEnchants.put("spellbound", Bukkit.getRegistry(Enchantment.class).get(Spellbound.KEY));
+		focusEnchants.put("falselife", Bukkit.getRegistry(Enchantment.class).get(FalseLife.KEY));
+		focusEnchants.put("potency", Bukkit.getRegistry(Enchantment.class).get(Potency.KEY));
+		focusEnchants.put("quickcast", Bukkit.getRegistry(Enchantment.class).get(QuickCast.KEY));
+		focusEnchants.put("repelling", Bukkit.getRegistry(Enchantment.class).get(Repelling.KEY));
+		focusEnchants.put("spellstealer", Bukkit.getRegistry(Enchantment.class).get(SpellStealer.KEY));
+		focusEnchants.put("spelltwinning", Bukkit.getRegistry(Enchantment.class).get(SpellTwinning.KEY));
+		
 		getLogger().info("FancyMagic enabled!");
 		
 	}
@@ -819,16 +828,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         */
     }
     
-    public static HashMap<String, Enchantment> focusEnchants = new HashMap<String, Enchantment>() {{
-    	put("unbreaking", Enchantment.UNBREAKING);
-    	put("spellbound", Bukkit.getRegistry(Enchantment.class).get(Spellbound.KEY));
-    	put("falselife", Bukkit.getRegistry(Enchantment.class).get(FalseLife.KEY));
-    	put("potency", Bukkit.getRegistry(Enchantment.class).get(Potency.KEY));
-    	put("quickcast", Bukkit.getRegistry(Enchantment.class).get(QuickCast.KEY));
-    	put("repelling", Bukkit.getRegistry(Enchantment.class).get(Repelling.KEY));
-    	put("spellstealer", Bukkit.getRegistry(Enchantment.class).get(SpellStealer.KEY));
-    	put("spelltwinning", Bukkit.getRegistry(Enchantment.class).get(SpellTwinning.KEY));
-    }};
+    public static HashMap<String, Enchantment> focusEnchants = new HashMap<String, Enchantment>();
     
     @EventHandler
     public void onPrepareItemEnchant(PrepareItemEnchantEvent event) {

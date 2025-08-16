@@ -42,7 +42,7 @@ public class SpellManager {
             	
                 	// Update EntityKiller
             		if (EntityKiller.killers != null) {
-	            		for (Iterator<EntityKiller> ik = EntityKiller.killers.iterator(); ik.hasNext(); ) {
+	            		for (Iterator<EntityKiller> ik = new ArrayList<EntityKiller>(EntityKiller.killers).iterator(); ik.hasNext(); ) {
 	            			EntityKiller k = ik.next();
 	            			k.update();
 	            			if (k.dead)

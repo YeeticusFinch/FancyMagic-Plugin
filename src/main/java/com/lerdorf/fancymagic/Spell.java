@@ -613,7 +613,7 @@ public class Spell {
 			"Applies the speed and the haste potion effect and reduces spell cooldowns."
 			);
 	public static final SpellType WALL_RUNNING = new SpellType(
-			"Haste",
+			"Wall Running",
 			null, null,
 			4,
 			new Material[] {Material.HONEY_BOTTLE}, // hotbar requirements
@@ -2510,7 +2510,7 @@ public class Spell {
 						if (e.getLocation().distance(loc) < explodeRange) {
 							e.addPotionEffects(effects);
 							e.damage(5+lvl*1.5f, source);
-							e.setVelocity(e.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.8)));	
+							e.setVelocity(e.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));	
 							spellHit(spell, e);
 						}
 					}
@@ -2527,7 +2527,7 @@ public class Spell {
 										//entity.damage(5+lvl, le);
 										entity.addPotionEffects(effects);
 										entity.damage(6+lvl*2, source);
-										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.8)));
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
 										
 										le.getWorld().playSound(point, Sound.ENTITY_GENERIC_EXPLODE, 1, 1.9f);
 										spellHit(spell, entity);
@@ -2559,12 +2559,12 @@ public class Spell {
 				Spell spell = this;
 
 				Collection<PotionEffect> effects = new ArrayList<PotionEffect>();
-				effects.add(new PotionEffect(PotionEffectType.SLOWNESS, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+5), true, true));
-				effects.add(new PotionEffect(PotionEffectType.MINING_FATIGUE, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+5), true, true));
-				effects.add(new PotionEffect(PotionEffectType.WEAKNESS, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+2), true, true));
-				effects.add(new PotionEffect(PotionEffectType.BLINDNESS, (int)Math.round(20*(1+lvl*0.6f)), (int)Math.round(lvl+1), true, true));
-				effects.add(new PotionEffect(PotionEffectType.DARKNESS, (int)Math.round(20*(1+lvl*0.6f)), (int)Math.round(lvl+1), true, true));
-				effects.add(new PotionEffect(PotionEffectType.WITHER, (int)Math.round(20*(1+lvl*0.6f)), (int)Math.round(lvl), true, true));
+				effects.add(new PotionEffect(PotionEffectType.SLOWNESS, (int)Math.round(30*(1+lvl*1.8f)), (int)Math.round(lvl+5), true, true));
+				effects.add(new PotionEffect(PotionEffectType.MINING_FATIGUE, (int)Math.round(30*(1+lvl*1.8f)), (int)Math.round(lvl+5), true, true));
+				effects.add(new PotionEffect(PotionEffectType.WEAKNESS, (int)Math.round(30*(1+lvl*1.8f)), (int)Math.round(lvl+2), true, true));
+				effects.add(new PotionEffect(PotionEffectType.BLINDNESS, (int)Math.round(30*(1+lvl*1.6f)), (int)Math.round(lvl+1), true, true));
+				effects.add(new PotionEffect(PotionEffectType.DARKNESS, (int)Math.round(30*(1+lvl*1.6f)), (int)Math.round(lvl+1), true, true));
+				effects.add(new PotionEffect(PotionEffectType.WITHER, (int)Math.round(30*(1+lvl*1.6f)), (int)Math.round(lvl), true, true));
 
 				for (int i = 0; i < (twinning ? 2 : 1); i++) {
 					float rightOffset = twinning ? 2*i-1 : 0;
@@ -2705,7 +2705,7 @@ public class Spell {
 										//entity.damage(5+lvl, le);
 										//entity.addPotionEffects(effects);
 										entity.damage(3.5f+lvl*1.2, source);
-										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5 + 0.1*lvl, 0)).multiply(-0.6-0.15*lvl)));
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5 + 0.2*lvl, 0)).multiply(-0.7-0.15*lvl)));
 										le.getWorld().spawnParticle(Particle.BLOCK, point, 5, 0.1f, 0.1f, 0.1f, 0.1f, Material.OAK_LEAVES.createBlockData());
 										le.getWorld().playSound(point, Sound.ENTITY_ARROW_HIT, 1, 0.6f);
 										le.getWorld().playSound(point, Sound.BLOCK_VINE_BREAK, 1, 1);
@@ -2793,7 +2793,7 @@ public class Spell {
 							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
 							
 							if (c < 5 + 5*lvl) {
-								if (c % 3 == 0) {
+								if (true) {
 									le.getWorld().playSound(le, Sound.ENTITY_CAT_HISS, 1, 1.8f);
 									Vector vel = le.getEyeLocation().getDirection().add(new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).normalize().multiply(0.7f + lvl*0.3f);
 									FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(10, 100, 20), 1.6f));
@@ -2803,7 +2803,6 @@ public class Spell {
 											entity -> !entity.equals(le));
 									SpellManager.addSpell(spell, le, eyeloc, item, rangeMod, cooldownMod, potencyMod, 
 											(loc, tick) -> {
-												le.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, loc, 1, 0, 0, 0, 0);
 												return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.9, false, false, 
 														(point, entity) -> {
 															//entity.damage(5+lvl, le);
@@ -2852,15 +2851,16 @@ public class Spell {
 				
 				//Spell spell = this;
 
+				int duration = (int)(200 + 40*lvl);
 			
 					ItemStack d1 = new ItemStack(Material.SNOWBALL);
 					ItemMeta meta = d1.getItemMeta();
-					meta.setItemModel(NamespacedKey.fromString("fsp:poison_barrage"));
+					meta.setItemModel(NamespacedKey.fromString("fsp:snow_barrage"));
 					d1.setItemMeta(meta);
 					
 					ItemStack d2 = new ItemStack(Material.SNOWBALL);
 					meta = d2.getItemMeta();
-					meta.setItemModel(NamespacedKey.fromString("fsp:poison_barrage_squares"));
+					meta.setItemModel(NamespacedKey.fromString("fsp:snow_barrage_squares"));
 					d2.setItemMeta(meta);
 					
 					ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
@@ -2901,7 +2901,7 @@ public class Spell {
 							display2.teleport(loc);
 							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
 							
-							if (c < 5 + 5*lvl) {
+							if (c < duration) {
 								if (c % 3 == 0) {
 									//le.getWorld().playSound(le, Sound.ENTITY_CAT_HISS, 1, 1.8f);
 									Vector vel = le.getEyeLocation().getDirection().add(new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).normalize().multiply(0.7f + lvl*0.3f);
@@ -2956,7 +2956,7 @@ public class Spell {
 				float spreadX = 0.5f;
 				float spreadY = 0.3f;
 				for (int i = 0; i < blasts; i++) {
-					Vector ivel = right.clone().multiply(Math.cos((i-1) * 2.0*Math.PI / (blasts-1)) * spreadX).add(up.clone().multiply(Math.sin((i-1) * 2.0*Math.PI / (blasts-1)) * spreadY));
+					Vector ivel = vel.clone().add(right.clone().multiply(Math.cos((i-1) * 2.0*Math.PI / (blasts-1)) * spreadX).add(up.clone().multiply(Math.sin((i-1) * 2.0*Math.PI / (blasts-1)) * spreadY)));
 					//Vector ivel = le.getEyeLocation().getDirection().add(Vector.getRandom()).normalize().multiply(0.7f + lvl*(0.2f));
 					SpellManager.addSpell(this, le, le.getEyeLocation().add(ivel), item, rangeMod, cooldownMod, potencyMod, 
 							(loc, tick) -> {
@@ -3079,7 +3079,7 @@ public class Spell {
 						if (((player != null && e instanceof Player) || (player == null && !(e instanceof Player)))) {
 							if (le instanceof Player p)
 								p.sendMessage(ChatColor.AQUA + "You recieved an elemental ward from " + le.getName());
-							SpellManager.elementalWard(le, 60*(4+(int)lvl));
+							SpellManager.elementalWard(le, 30*(4+(int)lvl));
 							le.addScoreboardTag("ElementalWard");
 						}
 					}
@@ -3101,7 +3101,7 @@ public class Spell {
 						if (((player != null && e instanceof Player) || (player == null && !(e instanceof Player)))) {
 							if (le instanceof Player p)
 								p.sendMessage(ChatColor.AQUA + "You recieved a primordial ward from " + le.getName());
-							SpellManager.elementalWard(le, 60*(4+(int)lvl));
+							SpellManager.elementalWard(le, 30*(4+(int)lvl));
 							le.addScoreboardTag("PrimordialWard");
 						}
 					}
@@ -3166,7 +3166,7 @@ public class Spell {
 				Spell spell = this;
 				le.getWorld().playSound(le, Sound.ENTITY_WITHER_SHOOT, 1, 2);
 				Vector vel = le.getEyeLocation().getDirection().multiply(0.6f + lvl*0.2f);
-				FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(24, 30, 4), 0.7f));
+				FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(24, 30, 4), 0.9f));
 				float range = (18+lvl*3)*rangeMod;
 				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
 						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
@@ -3274,7 +3274,7 @@ public class Spell {
 								if (c % 3 == 0) {
 									le.getWorld().playSound(le, Sound.ENTITY_BLAZE_SHOOT, 1, 2);
 									Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.2f);
-									FancyParticle particle = new FancyParticle(Particle.FLAME, 1, 0, 0, 0, 0);
+									FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(24, 30, 4), 0.9f));
 									float range = (20+lvl*4)*rangeMod;
 									Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
 											le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
@@ -3381,6 +3381,7 @@ public class Spell {
 										//le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
 										le.getWorld().playSound(point, Sound.ENTITY_CAT_HISS, 1, 0.6f);
 										spawnCloud.accept(point);
+										
 									}
 									);
 						});
@@ -3824,10 +3825,13 @@ public class Spell {
 
 					Block block = point.getBlock();
 					if (!block.isPassable() && block.getBoundingBox().contains(point.toVector())) {
-						point = getClosestPoint(loc.toVector(), block.getBoundingBox()).toLocation(loc.getWorld())
+						Location hit = getClosestPoint(loc.toVector(), block.getBoundingBox()).toLocation(loc.getWorld())
 								.subtract(step.clone().normalize().multiply(0.5f));
-
-						return false;
+						hitBlock.accept(hit, block);
+						if (!pierceBlocks) {
+							point = hit;
+							return false;
+						}
 					}
 
 					if (tick > lifetime || distance > range) {
