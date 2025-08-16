@@ -19,10 +19,13 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.FireworkEffect;
 import org.bukkit.Particle.DustOptions;
 import org.bukkit.Rotation;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.damage.DamageSource;
@@ -33,6 +36,7 @@ import org.bukkit.entity.Creeper;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.ItemDisplay.ItemDisplayTransform;
@@ -41,11 +45,13 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.SkeletonHorse;
+import org.bukkit.entity.WindCharge;
 import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
@@ -659,6 +665,24 @@ public class Spell {
 			null, // inventory requirements
 			"Creates a cloud of poison at a ranged point."
 			);
+	public static final SpellType ENDER_CHEST = new SpellType(
+			"Ender Chest",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.AMETHYST_SHARD);
+				put('F', Material.ENDER_CHEST);
+				put('G', Material.DIAMOND);
+			}},
+			4,
+			null, // hotbar requirements
+			new Material[] {Material.ENDER_CHEST, Material.ENDER_EYE}, // inventory requirements
+			"Opens your enderchest."
+			);
 	
 	// Spell.java
 	
@@ -909,7 +933,7 @@ public class Spell {
 							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
 							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
 							
-							Vector right = twinning ? le.getEyeLocation().getDirection().rotateAroundY(Math.PI*0.5f).multiply(rightOffset) : new Vector(0, 0, 0);
+							Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
 							
 							Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
 							display.teleport(eyeloc);
@@ -1316,7 +1340,7 @@ public class Spell {
 							
 							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
 							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
-							Vector right = twinning ? le.getEyeLocation().getDirection().rotateAroundY(Math.PI*0.5f).multiply(rightOffset) : new Vector(0, 0, 0);
+							Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
 							
 							Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
 							display.teleport(eyeloc);
@@ -1436,7 +1460,7 @@ public class Spell {
 							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
 							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
 							
-							Vector right = twinning ? le.getEyeLocation().getDirection().rotateAroundY(Math.PI*0.5f).multiply(rightOffset) : new Vector(0, 0, 0);
+							Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
 							
 							Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
 
@@ -1622,7 +1646,7 @@ public class Spell {
 							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
 							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
 							
-							Vector right = twinning ? le.getEyeLocation().getDirection().rotateAroundY(Math.PI*0.5f).multiply(rightOffset) : new Vector(0, 0, 0);
+							Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
 							
 							Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
 
@@ -1682,7 +1706,7 @@ public class Spell {
 				Spell spell = this;
 				for (int i = 0; i < (twinning ? 2 : 1); i++) {
 					float rightOffset = twinning ? 2*i-1 : 0;
-					Vector right = twinning ? le.getEyeLocation().getDirection().rotateAroundY(Math.PI*0.5f).multiply(rightOffset) : new Vector(0, 0, 0);
+					Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
 					Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
 
 							//le.getWorld().playSound(le, Sound., 1, 2);
@@ -1821,7 +1845,7 @@ public class Spell {
 				
 				for (int i = 0; i < (twinning ? 2 : 1); i++) {
 					float rightOffset = twinning ? 2*i-1 : 0;
-					Vector right = twinning ? le.getEyeLocation().getDirection().rotateAroundY(Math.PI*0.5f).multiply(rightOffset) : new Vector(0, 0, 0);
+					Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
 							
 					Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
 
@@ -1871,7 +1895,7 @@ public class Spell {
 				
 				for (int i = 0; i < (twinning ? 2 : 1); i++) {
 					float rightOffset = twinning ? 2*i-1 : 0;
-					Vector right = twinning ? le.getEyeLocation().getDirection().rotateAroundY(Math.PI*0.5f).multiply(rightOffset) : new Vector(0, 0, 0);
+					Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
 							
 					Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
 				
@@ -2452,37 +2476,926 @@ public class Spell {
 				break;
 			}
 			case "Prismatic Bolt":
+			{
+				if (twinning) {
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+    					cast(le, item, rangeMod, cooldownMod, potencyMod, false);
+					}, 10);
+				}
+				success = true;
+				cooldown = 40;
+				Spell spell = this;
+				le.getWorld().playSound(le, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1, 1.5f);
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.6f + lvl*0.2f);
+				FancyParticle particle = new FancyParticle(Particle.FIREWORK, 1, 0, 0, 0, 0);
+				float range = (25+lvl*3.5f)*rangeMod;
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
+					add(new PotionEffect(PotionEffectType.BLINDNESS, (int)(30+25*lvl), (int)lvl));
+					}};
+				final Consumer<Location> explode = (loc) -> {
+					double explodeRange =3+lvl;
+					Spell.spawnParticleSphere(le, explodeRange, 10, Particle.FLASH);
+					for (int i = 0; i < explodeRange*2; i++) {
+						Firework fw = (Firework) loc.getWorld().spawnEntity(loc.clone().add(new Vector(explodeRange*(Math.random()*2-1), explodeRange*(Math.random()*2-1), explodeRange*(Math.random()*2-1))), EntityType.FIREWORK_ROCKET);
+						FireworkMeta meta = fw.getFireworkMeta();
+						meta.addEffect(FireworkEffect.builder().flicker(true).trail(true).withColor(Color.YELLOW).withColor(Color.WHITE).withColor(Color.AQUA).withColor(Color.GREEN).withColor(Color.RED).withColor(Color.PURPLE).with(FireworkEffect.Type.BURST).build());
+						fw.setFireworkMeta(meta);
+						fw.detonate();
+					}
+					explodeRange = Math.pow(explodeRange, 2);
+					for (LivingEntity e : nearbyEntities) {
+						if (e.getLocation().distance(loc) < explodeRange) {
+							e.addPotionEffects(effects);
+							e.damage(5+lvl*1.5f, source);
+							e.setVelocity(e.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.8)));	
+							spellHit(spell, e);
+						}
+					}
+				};
+				SpellManager.addSpell(this, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
+						(loc, tick) -> {
+							Firework fw = (Firework) loc.getWorld().spawnEntity(loc, EntityType.FIREWORK_ROCKET);
+							FireworkMeta meta = fw.getFireworkMeta();
+							meta.addEffect(FireworkEffect.builder().flicker(true).trail(true).withColor(Color.YELLOW).withColor(Color.WHITE).withColor(Color.AQUA).withColor(Color.GREEN).withColor(Color.RED).withColor(Color.PURPLE).with(FireworkEffect.Type.BURST).build());
+							fw.setFireworkMeta(meta);
+							fw.detonate();
+							return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
+									(point, entity) -> {
+										//entity.damage(5+lvl, le);
+										entity.addPotionEffects(effects);
+										entity.damage(6+lvl*2, source);
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.8)));
+										
+										le.getWorld().playSound(point, Sound.ENTITY_GENERIC_EXPLODE, 1, 1.9f);
+										spellHit(spell, entity);
+										explode.accept(point);
+									},
+									(point, block) -> {
+										explode.accept(point);
+										le.getWorld().playSound(point, Sound.ENTITY_GENERIC_EXPLODE, 1, 1.9f);
+									}
+									);
+						});
 				break;
+			}
 			case "Enervation":
+			{
+				success = true;
+				cooldown = 50 + (twinning ? 20 : 0);
+				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
+				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
+				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
+
+				// Convert to AxisAngle
+				AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+		
+				//Vector offset = new Vector(0, -0.2f, 0);
+				//float rightOffset = 0.2f;
+				//float forwardOffset = 0.4f;
+				
+				Spell spell = this;
+
+				Collection<PotionEffect> effects = new ArrayList<PotionEffect>();
+				effects.add(new PotionEffect(PotionEffectType.SLOWNESS, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+5), true, true));
+				effects.add(new PotionEffect(PotionEffectType.MINING_FATIGUE, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+5), true, true));
+				effects.add(new PotionEffect(PotionEffectType.WEAKNESS, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+2), true, true));
+				effects.add(new PotionEffect(PotionEffectType.BLINDNESS, (int)Math.round(20*(1+lvl*0.6f)), (int)Math.round(lvl+1), true, true));
+				effects.add(new PotionEffect(PotionEffectType.DARKNESS, (int)Math.round(20*(1+lvl*0.6f)), (int)Math.round(lvl+1), true, true));
+				effects.add(new PotionEffect(PotionEffectType.WITHER, (int)Math.round(20*(1+lvl*0.6f)), (int)Math.round(lvl), true, true));
+
+				for (int i = 0; i < (twinning ? 2 : 1); i++) {
+					float rightOffset = twinning ? 2*i-1 : 0;
+			
+					ItemStack d1 = new ItemStack(Material.SNOWBALL);
+					ItemMeta meta = d1.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:necrotic_barrage"));
+					d1.setItemMeta(meta);
+					
+					ItemStack d2 = new ItemStack(Material.SNOWBALL);
+					meta = d2.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:necrotic_barrage_squares"));
+					d2.setItemMeta(meta);
+					
+					ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d1);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+					
+					ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d2);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+
+					new BukkitRunnable() {
+						int c = 0;
+	
+						@Override
+						public void run() {
+							Quaternionf rot = new Quaternionf().rotateZ((float) Math.toRadians(10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+							
+							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
+							Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
+							
+							Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
+							display.teleport(eyeloc);
+							display.setTransformation(new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+							display2.teleport(eyeloc);
+							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+							
+							if (c < 5 + 5*lvl) {
+								if (c % 3 == 0) {
+									le.getWorld().playSound(le, Sound.ENTITY_WITHER_SHOOT, 1, 2f);
+									Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.3f);
+									FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(0, 0, 0), 1.2f));
+									float range = (20+lvl*5)*rangeMod;
+									Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+											le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+											entity -> !entity.equals(le));
+									SpellManager.addSpell(spell, le, eyeloc, item, rangeMod, cooldownMod, potencyMod, 
+											(loc, tick) -> {
+												le.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, loc, 1, 0, 0, 0, 0);
+												return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
+														(point, entity) -> {
+															//entity.damage(5+lvl, le);
+															entity.damage(2+lvl*0.5f, source);
+															//entity.setFreezeTicks((int)Math.round(25*(1+lvl)));
+															entity.setVelocity(entity.getVelocity().multiply(1/(1+lvl*0.5f)));
+															entity.addPotionEffects(effects);
+															le.getWorld().playSound(point, Sound.BLOCK_ANVIL_PLACE, 1, 0.6f);
+															le.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
+															spellHit(spell, entity);
+														},
+														(point, block) -> {
+															le.getWorld().playSound(point, Sound.BLOCK_ANVIL_LAND, 1, 2f);
+															le.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, point, 3, 0.1f, 0.1f, 0.1f, 0.1f);
+														}
+														);
+											});
+								}
+							} else {
+								display.remove();
+								display2.remove();
+								cancel();
+								return;
+							}
+							
+							c++;
+						}
+						
+					}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+				}
 				break;
+			}
 			case "Wind Burst":
-				break;
+				{
+					WindCharge fb = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation()), WindCharge.class);
+					//fb.setFireTicks(5);
+					//fb.setIsIncendiary(true);
+					//fb.setYield(80);
+					fb.setMetadata("Power", new FixedMetadataValue(FancyMagic.plugin, 5 + 4*lvl));
+					fb.setShooter(le);
+					float speed = 2f + 0.5f*lvl;
+					float range = (10 * 6*lvl) * rangeMod;
+					fb.setVelocity(le.getEyeLocation().getDirection().multiply(speed));
+					EntityKiller k = new EntityKiller(fb, (int)(range/speed));
+					break;
+				}
 			case "Thornwhip":
+			{
+				if (twinning) {
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+    					cast(le, item, rangeMod, cooldownMod, potencyMod, false);
+					}, 10);
+				}
+				success = true;
+				cooldown = 20;
+				Spell spell = this;
+				le.getWorld().playSound(le, Sound.ENTITY_ARROW_SHOOT, 1, 0.7f);
+				le.getWorld().playSound(le, Sound.BLOCK_VINE_BREAK, 1, 1);
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.6f + lvl*0.2f);
+				FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(10, 180, 10), 0.9f));
+				float range = (20+lvl*4)*rangeMod;
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				/*Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
+					add(new PotionEffect(PotionEffectType.HUNGER, (int)(20+20*lvl), (int)lvl));
+					add(new PotionEffect(PotionEffectType.WEAKNESS, (int)(20+15*lvl), (int)lvl));
+					}};*/
+				SpellManager.addSpell(this, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
+						(loc, tick) -> {
+							le.getWorld().spawnParticle(Particle.BLOCK, loc, 1, 0, 0, 0, 0, Material.OAK_LEAVES.createBlockData());
+							return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
+									(point, entity) -> {
+										//entity.damage(5+lvl, le);
+										//entity.addPotionEffects(effects);
+										entity.damage(3.5f+lvl*1.2, source);
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5 + 0.1*lvl, 0)).multiply(-0.6-0.15*lvl)));
+										le.getWorld().spawnParticle(Particle.BLOCK, point, 5, 0.1f, 0.1f, 0.1f, 0.1f, Material.OAK_LEAVES.createBlockData());
+										le.getWorld().playSound(point, Sound.ENTITY_ARROW_HIT, 1, 0.6f);
+										le.getWorld().playSound(point, Sound.BLOCK_VINE_BREAK, 1, 1);
+										spellHit(spell, entity);
+									},
+									(point, block) -> {
+										le.getWorld().spawnParticle(Particle.BLOCK, point, 5, 0.1f, 0.1f, 0.1f, 0.1f, Material.OAK_LEAVES.createBlockData());
+										le.getWorld().playSound(point, Sound.ENTITY_ARROW_HIT, 1, 0.6f);
+										le.getWorld().playSound(point, Sound.BLOCK_VINE_BREAK, 1, 1);
+									}
+									);
+						});
 				break;
+			}
 			case "Poison Spray":
+			{
+				success = true;
+				cooldown = 30 + (twinning ? 20 : 0);
+				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
+				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
+				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
+
+				// Convert to AxisAngle
+				AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+		
+				//Vector offset = new Vector(0, -0.2f, 0);
+				//float rightOffset = 0.2f;
+				//float forwardOffset = 0.4f;
+				
+				Spell spell = this;
+
+				Collection<PotionEffect> effects = new ArrayList<PotionEffect>();
+				effects.add(new PotionEffect(PotionEffectType.NAUSEA, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+1), true, true));
+				effects.add(new PotionEffect(PotionEffectType.POISON, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+1), true, true));
+				
+				for (int i = 0; i < (twinning ? 2 : 1); i++) {
+					float rightOffset = twinning ? 2*i-1 : 0;
+			
+					ItemStack d1 = new ItemStack(Material.SNOWBALL);
+					ItemMeta meta = d1.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:poison_barrage"));
+					d1.setItemMeta(meta);
+					
+					ItemStack d2 = new ItemStack(Material.SNOWBALL);
+					meta = d2.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:poison_barrage_squares"));
+					d2.setItemMeta(meta);
+					
+					ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d1);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+					
+					ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d2);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+
+					new BukkitRunnable() {
+						int c = 0;
+	
+						@Override
+						public void run() {
+							Quaternionf rot = new Quaternionf().rotateZ((float) Math.toRadians(10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+							
+							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
+							Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
+							
+							Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
+							display.teleport(eyeloc);
+							display.setTransformation(new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+							display2.teleport(eyeloc);
+							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+							
+							if (c < 5 + 5*lvl) {
+								if (c % 3 == 0) {
+									le.getWorld().playSound(le, Sound.ENTITY_CAT_HISS, 1, 1.8f);
+									Vector vel = le.getEyeLocation().getDirection().add(new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).normalize().multiply(0.7f + lvl*0.3f);
+									FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(10, 100, 20), 1.6f));
+									float range = (10+lvl*3)*rangeMod;
+									Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+											le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+											entity -> !entity.equals(le));
+									SpellManager.addSpell(spell, le, eyeloc, item, rangeMod, cooldownMod, potencyMod, 
+											(loc, tick) -> {
+												le.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, loc, 1, 0, 0, 0, 0);
+												return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.9, false, false, 
+														(point, entity) -> {
+															//entity.damage(5+lvl, le);
+															entity.damage(1.5f+lvl*0.5f, source);
+															entity.addPotionEffects(effects);
+															le.getWorld().playSound(point, Sound.ENTITY_SPIDER_HURT, 1, 1.5f);
+															le.getWorld().spawnParticle(Particle.POOF, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
+															spellHit(spell, entity);
+														},
+														(point, block) -> {
+															//le.getWorld().playSound(point, Sound.ENTITY_SPIDER_HURT, 1, 2f);
+															le.getWorld().spawnParticle(Particle.POOF, point, 3, 0.1f, 0.1f, 0.1f, 0.1f);
+														}
+														);
+											});
+								}
+							} else {
+								display.remove();
+								display2.remove();
+								cancel();
+								return;
+							}
+							
+							c++;
+						}
+						
+					}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+				}
 				break;
+			}
 			case "Levitation":
+			{
+				success = true;
+				cooldown = 40;
+				Vector offset = new Vector(0, -0.6f, 0);
+				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
+				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
+				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
+
+				// Convert to AxisAngle
+				AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+		
+				//Vector offset = new Vector(0, -0.2f, 0);
+				//float rightOffset = 0.2f;
+				//float forwardOffset = 0.4f;
+				
+				//Spell spell = this;
+
+			
+					ItemStack d1 = new ItemStack(Material.SNOWBALL);
+					ItemMeta meta = d1.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:poison_barrage"));
+					d1.setItemMeta(meta);
+					
+					ItemStack d2 = new ItemStack(Material.SNOWBALL);
+					meta = d2.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:poison_barrage_squares"));
+					d2.setItemMeta(meta);
+					
+					ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d1);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+					
+					ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d2);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.25f, 0.25f, 0.25f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+
+					new BukkitRunnable() {
+						int c = 0;
+	
+						@Override
+						public void run() {
+							Quaternionf rot = new Quaternionf().rotateZ((float) Math.toRadians(10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+							
+							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
+							//Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
+							
+							Location loc = le.getLocation().add(offset).setDirection(new Vector(0, -1, 0));
+							display.teleport(loc);
+							display.setTransformation(new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+							display2.teleport(loc);
+							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+							
+							if (c < 5 + 5*lvl) {
+								if (c % 3 == 0) {
+									//le.getWorld().playSound(le, Sound.ENTITY_CAT_HISS, 1, 1.8f);
+									Vector vel = le.getEyeLocation().getDirection().add(new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).normalize().multiply(0.7f + lvl*0.3f);
+									FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(255, 255, 255), 1.6f));
+									
+									Location ground = raycastForBlocks(loc, new Vector(0, -1, 0));
+									double distance = ground.distanceSquared(loc);
+									if (distance < Math.pow(1+lvl, 2)) {
+										le.removePotionEffect(PotionEffectType.SLOW_FALLING);
+										le.addPotionEffects(new ArrayList<PotionEffect>() {{add(new PotionEffect(PotionEffectType.LEVITATION, 2000, 0, true, false));}});
+									} else {
+										le.removePotionEffect(PotionEffectType.LEVITATION);
+										le.addPotionEffects(new ArrayList<PotionEffect>() {{add(new PotionEffect(PotionEffectType.SLOW_FALLING, 2000, 0, true, false));}});
+									}
+								}
+							} else {
+								le.removePotionEffect(PotionEffectType.LEVITATION);
+								le.removePotionEffect(PotionEffectType.SLOW_FALLING);
+								display.remove();
+								display2.remove();
+								cancel();
+								return;
+							}
+							
+							c++;
+						}
+						
+					}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+				
 				break;
+			}
 			case "Thunderwave":
+			{
+				if (twinning) {
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+    					cast(le, item, rangeMod, cooldownMod, potencyMod, false);
+					}, 10);
+				}
+				success = true;
+				cooldown = 20 + (twinning ? 15 : 0);
+				Spell spell = this;
+				le.getWorld().playSound(le, Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1, 0.7f);
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.2f);
+				FancyParticle particle = new FancyParticle(Particle.EXPLOSION, 1, 0, 0, 0, 0);
+				Vector right = vel.clone().crossProduct(new Vector(0, 1, 0)).normalize();
+				Vector up = right.clone().crossProduct(vel).normalize();
+				float range = (6+lvl)*rangeMod;
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				int blasts = 3 + (int)lvl;
+				float spreadX = 0.5f;
+				float spreadY = 0.3f;
+				for (int i = 0; i < blasts; i++) {
+					Vector ivel = right.clone().multiply(Math.cos((i-1) * 2.0*Math.PI / (blasts-1)) * spreadX).add(up.clone().multiply(Math.sin((i-1) * 2.0*Math.PI / (blasts-1)) * spreadY));
+					//Vector ivel = le.getEyeLocation().getDirection().add(Vector.getRandom()).normalize().multiply(0.7f + lvl*(0.2f));
+					SpellManager.addSpell(this, le, le.getEyeLocation().add(ivel), item, rangeMod, cooldownMod, potencyMod, 
+							(loc, tick) -> {
+								return laserTick(nearbyEntities, tick, le, loc, ivel, particle, range, false, 0.5, false, true, 
+										(point, entity) -> {
+											//entity.damage(5+lvl, le);
+											entity.damage(3+lvl*1.2, source);
+											entity.setVelocity(entity.getVelocity().add(ivel.clone().add(new Vector(0, (ivel.getY() < 0 ? -ivel.getY() : 0)+0.5, 0)).multiply(0.6 + 0.1f * lvl)));
+											le.getWorld().spawnParticle(Particle.GUST, point, 1, 0, 0, 0, 0);
+											le.getWorld().playSound(point, Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 1, 1.2f);
+											spellHit(spell, entity);
+										},
+										(point, block) -> {
+											le.getWorld().playSound(point, Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 1, 1.2f);
+											le.getWorld().spawnParticle(Particle.GUST, point, 1, 0, 0, 0, 0);
+										}
+										);
+							});
+				}
 				break;
+			}
 			case "Plant Growth":
-				break;
+				{
+					success = true;
+					cooldown = 60;
+					
+					float range = 20*rangeMod;
+					Location hit = raycastForBlocks(le.getEyeLocation(), le.getEyeLocation().getDirection().multiply(range));
+					particleLine(new FancyParticle(Particle.HAPPY_VILLAGER, 1, 0, 0, 0, 0), le.getEyeLocation(), hit, 0.25f);
+					int rad = 3 + (int)lvl;
+					for (int x = -rad; x < rad; x++) {
+						for (int y = -Math.max(1, rad/2); y < Math.max(1, rad/2); y++) {
+							for (int z = -rad; z < rad; z++ ) {
+								hit.clone().add(x, y, z).getBlock().applyBoneMeal(BlockFace.UP);
+							}
+						}
+					}
+					
+					break;
+				}
 			case "Transmute Plants":
+			{
+				if (le instanceof Player player) {
+					success = true;
+					cooldown = 50;
+					
+					float range = 20*rangeMod;
+					Location hit = raycastForBlocks(le.getEyeLocation(), le.getEyeLocation().getDirection().multiply(range));
+					particleLine(new FancyParticle(Particle.SMALL_GUST, 1, 0, 0, 0, 0), le.getEyeLocation(), hit, 0.25f);
+					int rad = 3 + (int)lvl;
+					for (int x = -rad; x < rad; x++) {
+						for (int y = -Math.max(1, rad/2); y < Math.max(1, rad/2); y++) {
+							for (int z = -rad; z < rad; z++ ) {
+								if (hit.clone().add(x, y, z).getBlock().getType() == Material.FARMLAND && hit.clone().add(x, y+1, z).getBlock().getType() == Material.AIR) {
+									particleLine(new FancyParticle(Particle.SMALL_GUST, 1, 0, 0, 0, 0), hit.clone(), hit.clone().add(x, y+1, z), 0.25f);
+									Location plantLoc = hit.clone().add(x, y+1, z);
+								    Block farmland = hit.clone().add(x, y, z).getBlock();
+
+								    // find seeds/crops in player's hotbar
+								    for (int slot = 0; slot < 9; slot++) {
+								        ItemStack plantItem = player.getInventory().getItem(slot);
+								        if (plantItem == null || plantItem.getType() == Material.AIR) continue;
+
+								        Material seedType = plantItem.getType();
+								        Material cropBlock = null;
+
+								        switch (seedType) {
+								            case WHEAT_SEEDS:
+								                cropBlock = Material.WHEAT;
+								                break;
+								            case CARROT:
+								                cropBlock = Material.CARROTS;
+								                break;
+								            case POTATO:
+								                cropBlock = Material.POTATOES;
+								                break;
+								            case BEETROOT_SEEDS:
+								                cropBlock = Material.BEETROOTS;
+								                break;
+								            default:
+								                break;
+								        }
+
+								        if (cropBlock != null) {
+								            // plant the crop
+								            plantLoc.getBlock().setType(cropBlock);
+
+								            // crops have "age" (0–7 for wheat/carrots/potatoes, 0–3 for beetroot)
+								            BlockData data = plantLoc.getBlock().getBlockData();
+								            if (data instanceof Ageable ageable) {
+								                ageable.setAge(0); // plant at seedling stage
+								                plantLoc.getBlock().setBlockData(ageable);
+								            }
+
+								            // consume one seed/crop from inventory
+								            plantItem.setAmount(plantItem.getAmount() - 1);
+								            player.getInventory().setItem(slot, plantItem.getAmount() > 0 ? plantItem : null);
+
+								        }
+								    }
+								}
+							}
+						}
+					}
+				}
 				break;
+			}
 			case "Elemental Ward":
+			{
+				if (le instanceof Player player) {
+					float radius = 5 * rangeMod;
+					for (float i = 0; i < 2*Math.PI; i += 0.05) {
+						le.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, le.getLocation().add(new Vector(radius*Math.sin(i), 1, radius*Math.cos(i))), 1, 0, 0, 0, 0);
+					}
+					success = true;
+					cooldown = 80;
+					le.getWorld().playSound(le.getEyeLocation(), Sound.ENTITY_WITHER_DEATH, 1, 0.6f);
+						
+					for (LivingEntity e : le.getWorld().getNearbyLivingEntities(le.getLocation(), radius, radius, radius)) {
+						if (((player != null && e instanceof Player) || (player == null && !(e instanceof Player)))) {
+							if (le instanceof Player p)
+								p.sendMessage(ChatColor.AQUA + "You recieved an elemental ward from " + le.getName());
+							SpellManager.elementalWard(le, 60*(4+(int)lvl));
+							le.addScoreboardTag("ElementalWard");
+						}
+					}
+				}
 				break;
+			}
 			case "Primordial Ward":
+			{
+				if (le instanceof Player player) {
+					float radius = 5*rangeMod;
+					for (float i = 0; i < 2*Math.PI; i += 0.05) {
+						le.getWorld().spawnParticle(Particle.SOUL, le.getLocation().add(new Vector(radius*Math.sin(i), 1, radius*Math.cos(i))), 1, 0, 0, 0, 0);
+					}
+					success = true;
+					cooldown = 90;
+					le.getWorld().playSound(le.getEyeLocation(), Sound.ENTITY_WITHER_DEATH, 1, 0.5f);
+						
+					for (LivingEntity e : le.getWorld().getNearbyLivingEntities(le.getLocation(), radius, radius, radius)) {
+						if (((player != null && e instanceof Player) || (player == null && !(e instanceof Player)))) {
+							if (le instanceof Player p)
+								p.sendMessage(ChatColor.AQUA + "You recieved a primordial ward from " + le.getName());
+							SpellManager.elementalWard(le, 60*(4+(int)lvl));
+							le.addScoreboardTag("PrimordialWard");
+						}
+					}
+				}
 				break;
+			}
 			case "Haste":
+			{
+				if (le.getScoreboardTags().contains("Haste")) {
+					return 20;
+				}
+				success = true;
+				cooldown = 35;
+				
+				int duration = (int)(200 + 20 * lvl);
+				le.addScoreboardTag("Haste");
+				le.addPotionEffects(new ArrayList<PotionEffect>() {{
+					add(new PotionEffect(PotionEffectType.SPEED, duration, (int)(lvl/2)));
+					add(new PotionEffect(PotionEffectType.HASTE, duration, (int)(0.5f+lvl*1.5f)));
+				}});
+				
+				SpellManager.addSpell(this, le, le.getLocation(), item, rangeMod, cooldownMod, potencyMod, (loc, tick) -> {
+					if (tick < duration) {
+						
+						return true;
+					} else {
+						le.removeScoreboardTag("Haste");
+						return false;
+					}
+				});
 				break;
+			}
 			case "Wall Running":
+			{
+				if (le instanceof Player player && !SpellManager.wallRun.contains(player)) {
+					int duration = (int)(200 + 40 * lvl);
+					SpellManager.wallRun.add(player);
+					success = true;
+					cooldown = 30;
+					player.sendMessage(ChatColor.GREEN + "Enabling wall run");
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+						player.sendMessage(ChatColor.YELLOW + "Disabling wall run");
+						if (SpellManager.wallRun.contains(player))
+							SpellManager.wallRun.remove(player);
+						SpellManager.stopWallRunning(player);
+					}, duration);
+					
+				} else {
+					return 20;
+				}
 				break;
+			}
 			case "Necrotic Bolt":
+			{
+				if (twinning) {
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+    					cast(le, item, rangeMod, cooldownMod, potencyMod, false);
+					}, 10);
+				}
+				success = true;
+				cooldown = 20;
+				Spell spell = this;
+				le.getWorld().playSound(le, Sound.ENTITY_WITHER_SHOOT, 1, 2);
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.6f + lvl*0.2f);
+				FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(24, 30, 4), 0.7f));
+				float range = (18+lvl*3)*rangeMod;
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
+					add(new PotionEffect(PotionEffectType.HUNGER, (int)(20+20*lvl), (int)lvl));
+					add(new PotionEffect(PotionEffectType.WEAKNESS, (int)(20+15*lvl), (int)lvl));
+					}};
+				SpellManager.addSpell(this, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
+						(loc, tick) -> {
+							return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
+									(point, entity) -> {
+										//entity.damage(5+lvl, le);
+										entity.addPotionEffects(effects);
+										entity.damage(3+lvl*1.2, source);
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+										le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
+										le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 0.6f);
+										spellHit(spell, entity);
+									},
+									(point, block) -> {
+										le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
+										le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 0.6f);
+									}
+									);
+						});
 				break;
+			}
 			case "Necrotic Storm":
+			{
+				success = true;
+				cooldown = 100 + (twinning ? 20 : 0);
+				
+				final int duration = (int)Math.ceil(5 + 5*lvl);
+				
+				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
+				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
+				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
+
+				// Convert to AxisAngle
+				AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+		
+				//Vector offset = new Vector(0, -0.2f, 0);
+
+				Spell spell = this;
+				
+				Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
+					add(new PotionEffect(PotionEffectType.HUNGER, (int)(20+20*lvl), (int)lvl));
+					add(new PotionEffect(PotionEffectType.WEAKNESS, (int)(20+15*lvl), (int)lvl));
+					}};
+
+				for (int i = 0; i < (twinning ? 2 : 1); i++) {
+					float rightOffset = twinning ? 2*i-1 : 0;
+			
+					ItemStack d1 = new ItemStack(Material.FIRE_CHARGE);
+					ItemMeta meta = d1.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:necrotic_barrage"));
+					d1.setItemMeta(meta);
+					
+					ItemStack d2 = new ItemStack(Material.FIRE_CHARGE);
+					meta = d2.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:necrotic_barrage_squares"));
+					d2.setItemMeta(meta);
+					
+					ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d1);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+					
+					ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d2);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+				
+					new BukkitRunnable() {
+						int c = 0;
+	
+						@Override
+						public void run() {
+							Quaternionf rot = new Quaternionf().rotateZ((float) Math.toRadians(10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+							
+							Quaternionf rot2 = new Quaternionf().rotateZ((float) Math.toRadians(-10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle2 = new AxisAngle4f().set(rot2);
+							
+							Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
+							
+							Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
+							display.teleport(eyeloc);
+							display.setTransformation(new Transformation(new Vector3f(), axisAngle, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+							display2.teleport(eyeloc);
+							display2.setTransformation(new Transformation(new Vector3f(), axisAngle2, new Vector3f(0.5f, 0.5f, 0.5f), new AxisAngle4f()));
+							
+							if (c < duration) {
+								if (c % 3 == 0) {
+									le.getWorld().playSound(le, Sound.ENTITY_BLAZE_SHOOT, 1, 2);
+									Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.2f);
+									FancyParticle particle = new FancyParticle(Particle.FLAME, 1, 0, 0, 0, 0);
+									float range = (20+lvl*4)*rangeMod;
+									Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+											le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+											entity -> !entity.equals(le));
+									
+									Location randLoc = eyeloc.clone().add(le.getEyeLocation().getDirection()).add((new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).multiply(1.4));
+									vel.add((new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).multiply(0.5));
+									
+									SpellManager.addSpell(spell, le, randLoc, item, rangeMod, cooldownMod, potencyMod, 
+											(loc, tick) -> {
+												return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
+														(point, entity) -> {
+															//entity.damage(5+lvl, le);
+															entity.addPotionEffects(effects);
+															entity.damage(2.8f+lvl*1.2f, source);
+															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+															le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
+															le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 0.6f);
+															spellHit(spell, entity);
+														},
+														(point, block) -> {
+															le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
+															le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 0.6f);
+														}
+														);
+											});
+								}
+							} else {
+								display.remove();
+								display2.remove();
+								cancel();
+								return;
+							}
+							
+							c++;
+						}
+						
+					}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+				}
+				
 				break;
+			}
 			case "Poison Cloud":
+			{
+				if (twinning) {
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+    					cast(le, item, rangeMod, cooldownMod, potencyMod, false);
+					}, 20);
+				}
+				success = true;
+				cooldown = 60;
+				Spell spell = this;
+				le.getWorld().playSound(le, Sound.ENTITY_CAT_HISS, 1, 1.5f);
+				Vector vel = le.getEyeLocation().getDirection().multiply(0.6f + lvl*0.2f);
+				FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(24, 30, 4), 0.7f));
+				float range = (20+lvl*3.5f)*rangeMod;
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
+					add(new PotionEffect(PotionEffectType.POISON, (int)(20+20*lvl), (int)lvl));
+					add(new PotionEffect(PotionEffectType.NAUSEA, (int)(20+15*lvl), (int)lvl));
+					}};
+				
+				int radius = (int)Math.round(3 + lvl);
+				int duration = (int)(100 + 40*lvl);
+					
+				Consumer<Location> spawnCloud = (loc) -> {
+					SpellManager.addSpell(this, le, loc, item, rangeMod, cooldownMod, potencyMod, (point, tick) -> {
+						loc.getWorld().spawnParticle(Particle.DUST, loc, 100, radius, radius, radius, 0.1f, new DustOptions(Color.GREEN, 2));
+						
+						if (tick % 20 == 0) {
+							Collection<LivingEntity> entities = le.getWorld().getNearbyLivingEntities(loc, radius, radius, radius);
+							for (LivingEntity entity : entities) {
+								if (entity.getEyeLocation().distance(loc) < radius) {
+									entity.addPotionEffects(effects);
+								}
+							}
+						}
+						
+						if (tick >= duration) {
+							return false;
+						} else {
+							return true;
+						}
+					});
+					
+				};
+					
+				SpellManager.addSpell(this, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
+						(loc, tick) -> {
+							return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
+									(point, entity) -> {
+										//entity.damage(5+lvl, le);
+										entity.addPotionEffects(effects);
+										entity.damage(2+lvl*1.2, source);
+										//entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+										//le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
+										le.getWorld().playSound(point, Sound.ENTITY_CAT_HISS, 1, 0.6f);
+										spawnCloud.accept(point);
+										spellHit(spell, entity);
+									},
+									(point, block) -> {
+										//le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
+										le.getWorld().playSound(point, Sound.ENTITY_CAT_HISS, 1, 0.6f);
+										spawnCloud.accept(point);
+									}
+									);
+						});
 				break;
+			}
+			case "Ender Chest":
+				{
+					if (le instanceof Player player) {
+						player.openInventory(player.getEnderChest());
+						player.getWorld().playSound(le.getLocation(), Sound.BLOCK_ENDER_CHEST_OPEN, 1, 1);
+						success = true;
+						cooldown = 80;
+					}
+					break;
+				}
 		}
 		
 		if (success) {
@@ -2495,6 +3408,9 @@ public class Spell {
 			}
 			//item.damage((int)(data.cost + lvl-1), le);
 		}
+		
+		if (le.getScoreboardTags().contains("Haste"))
+			cooldown *= 0.6f;
 		
 		return (int)Math.max(cooldown * cooldownMod, 1);
 		

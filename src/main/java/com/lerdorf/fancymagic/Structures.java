@@ -79,12 +79,16 @@ public class Structures {
 			addLoot(result, 0.2, Spell.DIMENSION_DOOR.getScroll());
 			addLoot(result, 0.2, Spell.PRISMATIC_BOLT.getScroll());
 			addLoot(result, 0.2, Spell.LEVITATION.getScroll());
+			addLoot(result, 0.2, Spell.ENDER_CHEST.getScroll());
 		}
 		else if (lootTable.contains("mineshaft")) {
 			addLoot(result, 0.2, Spell.MISTY_STEP.getScroll());
 		}
 		else if (lootTable.contains("end_city")) {
 			addLoot(result, 0.2, Spell.DIMENSION_DOOR.getScroll());
+			addLoot(result, 0.2, Spell.ENDER_CHEST.getScroll());
+			addLoot(result, 0.2, Spell.LEVITATION.getScroll());
+			addLoot(result, 0.1, Spell.MAGIC_MISSILE.getScroll());
 		}
 		else if (lootTable.contains("desert_pyramid")) {
 			addLoot(result, 0.2, Spell.FIREBOLT.getScroll());

@@ -37,6 +37,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Particle.DustOptions;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Lectern;
@@ -76,6 +77,7 @@ import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.world.LootGenerateEvent;
 import org.bukkit.inventory.CraftingInventory;
@@ -425,11 +427,31 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     	
     }
     
+    private boolean isWindCharge(Projectile projectile) {
+        return projectile.getType().name().equals("WIND_CHARGE"); // Modify based on actual wind charge identifier
+    }
+    
     @EventHandler
     public void onProjectileHit(ProjectileHitEvent event) {
         if (event.getHitEntity() instanceof Interaction interaction && interaction.getScoreboardTags().contains("shield")) {
             interaction.addScoreboardTag("hit");
             return;
+        }
+        if (isWindCharge(event.getEntity())) {
+            //windburst(event.getHitBlock() != null ? event.getHitBlock() : event.getEntity().getLocation().getBlock(), 3);
+            Location loc = event.getEntity().getLocation();
+            if (event.getEntity().hasMetadata("Power")) {
+            	int power = (int) event.getEntity().getMetadata("Power").get(0).value();
+            	List<Entity> nearbyEntities = event.getEntity().getNearbyEntities(3, 3, 3);
+                
+                for (Entity entity : nearbyEntities) {
+                    if (entity instanceof LivingEntity le) {
+                        Vector knockback = entity.getLocation().toVector().subtract(event.getEntity().getLocation().toVector()).normalize().multiply(((float)power)/2);
+                        knockback.setY(((float)power)/5); // Increase vertical knockback
+                        entity.setVelocity(entity.getVelocity().add(knockback));
+                    }
+                }
+            }
         }
     }
     
@@ -584,6 +606,69 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
                 event.setCancelled(true);
             }
         }
+    }
+    
+    @EventHandler
+	public void onPlayerMove(PlayerMoveEvent event) {
+	    if (event.getPlayer().getScoreboardTags().contains("Polymorph")) {
+	    	if (!event.getPlayer().getScoreboardTags().contains("Moving")) {
+	    		event.getPlayer().addScoreboardTag("Moving");
+	    	}
+	    }
+	    /*
+	    if (doubleJump.contains(event.getPlayer().getName()) && !event.getPlayer().getAllowFlight() && event.getPlayer().isOnGround()) {
+	    	Bukkit.getScheduler().runTaskLater(this, () -> {
+		    	canDoubleJump.add(event.getPlayer());
+		    	event.getPlayer().setAllowFlight(true);
+		    	event.getPlayer().sendMessage("Double Jump Refreshed");
+	        }, 2);
+	    } 
+	    if (wallJump.contains(event.getPlayer().getName())) {
+	    	boolean doubleJumpEnabled = canDoubleJump.contains(event.getPlayer());
+	    	if (!doubleJumpEnabled) {
+		    	boolean nextToWall = isNextToWall(event.getPlayer(), false);
+		    	event.getPlayer().setAllowFlight(nextToWall);
+		    	if (nextToWall)
+		    		event.getPlayer().sendMessage("Wall jump refreshed");
+	    	}
+	    }*/
+	    if (SpellManager.wallRun.contains(event.getPlayer().getName())) {
+	    	
+	    	boolean nextToWall = isNextToWall(event.getPlayer(), false);
+	    	if (!nextToWall || event.getPlayer().isOnGround() || !event.getPlayer().isSprinting()) {
+	            SpellManager.stopWallRunning(event.getPlayer());
+	            return;
+	        }
+
+	        if (nextToWall && event.getPlayer().getVelocity().getY() < 0.1) {
+	            if (!SpellManager.wallRunning.contains(event.getPlayer())) {
+	            	SpellManager.wallRunning(event.getPlayer());
+	                //SpellManager.wallRunning.add(event.getPlayer());
+	                event.getPlayer().setVelocity(event.getPlayer().getLocation().getDirection().multiply(0.5).setY(0.3));
+	                event.getPlayer().getWorld().playSound(event.getPlayer().getLocation(), Sound.BLOCK_SLIME_BLOCK_STEP, 1f, 1.2f);
+	            }
+	        }
+	    }
+	    
+	}
+	
+	public static boolean isNextToWall(Player player, boolean useParticles) {
+        Location loc = player.getLocation().add(0, 1, 0);
+        World world = loc.getWorld();
+        if (world == null) return false;
+
+        // Check 4 cardinal directions for wall blocks
+        BlockFace[] directions = {BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST};
+
+        for (BlockFace face : directions) {
+            Block block = loc.getBlock().getRelative(face);
+            if (!block.isPassable()) {
+            	if (useParticles) world.spawnParticle(Particle.GUST, loc.clone().add(face.getDirection()), 1);
+                return true;
+            }
+        }
+
+        return false;
     }
     
     @EventHandler
