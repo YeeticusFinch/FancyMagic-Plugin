@@ -2907,7 +2907,7 @@ public class Spell {
 									Vector vel = le.getEyeLocation().getDirection().add(new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).normalize().multiply(0.7f + lvl*0.3f);
 									FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(255, 255, 255), 1.6f));
 									
-									Location ground = raycastForBlocks(loc, new Vector(0, -1, 0));
+									Location ground = raycastForBlocksAndFluids(loc, new Vector(0, -3-lvl, 0));
 									double distance = ground.distanceSquared(loc);
 									if (distance < Math.pow(1+lvl, 2)) {
 										le.removePotionEffect(PotionEffectType.SLOW_FALLING);
@@ -3849,6 +3849,25 @@ public class Spell {
 		for (int i = 0; i < target.length() / inc; i++) {
 			Block block = result.getBlock();
 			if (!block.isPassable() && block.getBoundingBox().contains(result.toVector())) {
+				return getClosestPoint(loc.toVector(), block.getBoundingBox()).toLocation(loc.getWorld())
+						.subtract(target.clone().normalize().multiply(0.5f));
+			}
+			result = result.add(target.clone().normalize().multiply(0.9));
+		}
+
+		result.add(target.clone().normalize().multiply(target.length() - inc * ((int) (target.length() / inc))));
+
+		return result;
+	}
+	
+	public Location raycastForBlocksAndFluids(Location loc, Vector target) {
+		Location result = loc.clone();
+
+		double inc = 0.9;
+
+		for (int i = 0; i < target.length() / inc; i++) {
+			Block block = result.getBlock();
+			if ((block.isLiquid() || !block.isPassable()) && block.getBoundingBox().contains(result.toVector())) {
 				return getClosestPoint(loc.toVector(), block.getBoundingBox()).toLocation(loc.getWorld())
 						.subtract(target.clone().normalize().multiply(0.5f));
 			}
