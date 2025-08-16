@@ -56,8 +56,12 @@ public class Items {
 		return requirements;
 	}
 	
-	//Items.java
 	public static void addSpell(ItemStack spellbook, String spellName, int spellLevel) {
+		addSpell(spellbook, spellName, spellLevel, 5);
+	}
+	
+	//Items.java
+	public static void addSpell(ItemStack spellbook, String spellName, int spellLevel, int maxLevel) {
 		if (spellbook != null) {
 			BookMeta bmeta = (BookMeta) spellbook.getItemMeta();
 			if (bmeta != null) {
@@ -106,6 +110,9 @@ public class Items {
 						}
 					}
 				}
+				
+				if (resultingLevel > maxLevel)
+					resultingLevel = maxLevel;
 				
 				String spellPage = "§5§l§n" + spellName + "\n"
 						+ "§r§0Level: " + ChatColor.BLUE + resultingLevel + " " + (levelProgress > 0 ? (ChatColor.GRAY + "- " + levelProgress + "/" + resultingLevel) : "") + "\n" 

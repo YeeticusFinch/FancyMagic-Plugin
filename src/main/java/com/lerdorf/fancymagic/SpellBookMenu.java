@@ -444,6 +444,7 @@ public class SpellBookMenu implements Listener {
         pdc.set(PREPARED_KEY, PersistentDataType.STRING, json);
 
         // Update lore display
+        /*
         List<String> lore = new ArrayList<>();
         lore.add("§6Prepared Spells:");
         if (prepared.isEmpty()) {
@@ -454,11 +455,12 @@ public class SpellBookMenu implements Listener {
                 lore.add("§a" + spell.name + " §7(Lv " + spell.level + ")");
             }
         }
-        meta.setLore(lore);
+        meta.setLore(lore);*/
 
         book.setItemMeta(meta);
+        
+        updateSpellBookLore(book, prepared);
     }
-
 
     private void addSpell(ItemStack book, ItemStack scroll) {
     	NBTItem nbt = new NBTItem(scroll);

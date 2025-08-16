@@ -525,7 +525,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     		float kb = ((Repelling)ENCHANTS.get(Repelling.KEY)).getKnockbackPerLevel()*level;
     		
     		if (event.getDamager() instanceof LivingEntity lf) {
-    			Spell.spawnParticleSphere(le, 2, 100, Particle.FIREWORK);
+    			Spell.spawnParticleSphere(le, 2, 100, Particle.SMALL_GUST);
     			le.getWorld().playSound(le.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1, 0.6f);
     			lf.setVelocity(lf.getVelocity().add(lf.getLocation().subtract(le.getLocation()).toVector().normalize().multiply(kb).add(new Vector(0, kb*0.6f, 0))));
     		}
@@ -687,6 +687,14 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
             }, 1L);
         }
     }
+    
+    public static boolean isScroll(ItemStack item)  {
+    	return item != null && item.getItemMeta() != null && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "scroll")) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "scroll"), PersistentDataType.INTEGER) > 0;
+    }
+    
+    public static boolean isSpellbook(ItemStack item) {
+    	return item != null && item.getItemMeta() != null && item.getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0;
+    }
     /**
      * Called whenever a player's offhand item changes.
      */
@@ -694,7 +702,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         // You can now run your logic here
         //player.sendMessage("New offhand: " + (newOffhand == null ? "empty" : newOffhand.getType().name()));
         
-        if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
+        if (isSpellbook(player.getEquipment().getItemInOffHand())) {
         	List<SpellData> prepared = SpellBookMenu.loadPreparedSpells(player.getEquipment().getItemInOffHand()); 
         	for (SpellData spell : prepared) {
         		if (spell.name.equalsIgnoreCase("Chronal Shift")) {
@@ -726,7 +734,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         */
     }
     
-    HashMap<String, Enchantment> focusEnchants = new HashMap<String, Enchantment>() {{
+    public static HashMap<String, Enchantment> focusEnchants = new HashMap<String, Enchantment>() {{
     	put("unbreaking", Enchantment.UNBREAKING);
     	put("spellbound", Bukkit.getRegistry(Enchantment.class).get(Spellbound.KEY));
     	put("falselife", Bukkit.getRegistry(Enchantment.class).get(FalseLife.KEY));
