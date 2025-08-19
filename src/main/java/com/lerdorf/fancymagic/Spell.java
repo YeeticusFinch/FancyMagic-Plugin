@@ -850,7 +850,7 @@ public class Spell {
 							return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
 									(point, entity) -> {
 										//entity.damage(5+lvl, le);
-										entity.damage(4+lvl*1.2, source);
+										entity.damage(4+lvl*1.7, source);
 										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
 										entity.setFireTicks((int)(5+lvl*5));
 										setOnFire(point.getBlock());
@@ -958,7 +958,7 @@ public class Spell {
 											(loc, tick) -> {
 												return laserTick(nearbyEntities, tick, le, loc, vel.clone(), particle, range, false, 0.5, false, false, 
 														(point, entity) -> {
-															entity.damage(3+lvl*1.1, source);
+															entity.damage(3.5+lvl*1.7, source);
 															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.3)));
 															entity.setFireTicks((int)(5+lvl*5));
 															setOnFire(point.getBlock());
@@ -1362,8 +1362,8 @@ public class Spell {
 												return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
 														(point, entity) -> {
 															//entity.damage(5+lvl, le);
-															entity.damage(2+lvl*0.5f, source);
-															entity.setFreezeTicks((int)Math.round(25*(1+lvl)));
+															entity.damage(2+lvl*1.5f, source);
+															entity.setFreezeTicks((int)Math.round(30*(1+lvl)));
 															entity.setVelocity(entity.getVelocity().multiply(1/(1+lvl*0.5f)));
 															entity.addPotionEffects(effects);
 															le.getWorld().playSound(point, Sound.BLOCK_POWDER_SNOW_BREAK, 1, 1f);
@@ -1487,7 +1487,7 @@ public class Spell {
 												return itemTick(nearbyEntities, tick, display3, le, loc, vel, particle, range, 0.5, false, true, 
 														(point, entity) -> {
 															//entity.damage(5+lvl, le);
-															entity.damage(lvl*0.1, source);
+															entity.damage(lvl*0.3, source);
 															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.7f + (lvl*0.5f))));
 															le.getWorld().playSound(point, Sound.BLOCK_SNOW_HIT, 1, 1f);
 															spellHit(spell, entity);
@@ -1562,7 +1562,7 @@ public class Spell {
 							return itemTick(nearbyEntities, tick, display, le, loc, vel, particle, range, 0.5, false, true, 
 									(point, entity) -> {
 										//entity.damage(5+lvl, le);
-										entity.damage(5+lvl*1.4, source);
+										entity.damage(5+lvl*1.9, source);
 										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.8)));
 										le.getWorld().playSound(point, Sound.BLOCK_GLASS_BREAK, 1, 2f);
 										spellHit(spell, entity);
@@ -1673,7 +1673,7 @@ public class Spell {
 												return itemTick(nearbyEntities, tick, display3, le, loc, vel, particle, range, 0.5, false, true, 
 														(point, entity) -> {
 															//entity.damage(5+lvl, le);
-															entity.damage(4+lvl*1.3, source);
+															entity.damage(4.5+lvl*1.9, source);
 															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.8)));
 															le.getWorld().playSound(point, Sound.BLOCK_GLASS_BREAK, 1, 2f);
 															spellHit(spell, entity);
@@ -2509,7 +2509,7 @@ public class Spell {
 					for (LivingEntity e : nearbyEntities) {
 						if (e.getLocation().distance(loc) < explodeRange) {
 							e.addPotionEffects(effects);
-							e.damage(5+lvl*1.5f, source);
+							e.damage(6+lvl*1.9f, source);
 							e.setVelocity(e.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));	
 							spellHit(spell, e);
 						}
@@ -2526,7 +2526,7 @@ public class Spell {
 									(point, entity) -> {
 										//entity.damage(5+lvl, le);
 										entity.addPotionEffects(effects);
-										entity.damage(6+lvl*2, source);
+										entity.damage(7+lvl*2.4, source);
 										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
 										
 										le.getWorld().playSound(point, Sound.ENTITY_GENERIC_EXPLODE, 1, 1.9f);
@@ -2628,11 +2628,11 @@ public class Spell {
 											entity -> !entity.equals(le));
 									SpellManager.addSpell(spell, le, eyeloc, item, rangeMod, cooldownMod, potencyMod, 
 											(loc, tick) -> {
-												le.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, loc, 1, 0, 0, 0, 0);
+												//le.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, loc, 1, 0, 0, 0, 0);
 												return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
 														(point, entity) -> {
 															//entity.damage(5+lvl, le);
-															entity.damage(2+lvl*0.5f, source);
+															entity.damage(3+lvl*1.2f, source);
 															//entity.setFreezeTicks((int)Math.round(25*(1+lvl)));
 															entity.setVelocity(entity.getVelocity().multiply(1/(1+lvl*0.5f)));
 															entity.addPotionEffects(effects);
@@ -2663,15 +2663,13 @@ public class Spell {
 			}
 			case "Wind Burst":
 				{
-					WindCharge fb = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation()), WindCharge.class);
-					//fb.setFireTicks(5);
-					//fb.setIsIncendiary(true);
-					//fb.setYield(80);
+					WindCharge fb = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation().getDirection().multiply(0.5f)), WindCharge.class);
 					fb.setMetadata("Power", new FixedMetadataValue(FancyMagic.plugin, 5 + 4*lvl));
 					fb.setShooter(le);
 					float speed = 2f + 0.5f*lvl;
 					float range = (10 * 6*lvl) * rangeMod;
 					fb.setVelocity(le.getEyeLocation().getDirection().multiply(speed));
+					
 					EntityKiller k = new EntityKiller(fb, (int)(range/speed));
 					break;
 				}
@@ -2704,8 +2702,8 @@ public class Spell {
 									(point, entity) -> {
 										//entity.damage(5+lvl, le);
 										//entity.addPotionEffects(effects);
-										entity.damage(3.5f+lvl*1.2, source);
-										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5 + 0.2*lvl, 0)).multiply(-0.7-0.15*lvl)));
+										entity.damage(4.5f+lvl*1.6, source);
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5 + 0.2*lvl, 0)).multiply(-0.8-0.19*lvl)));
 										le.getWorld().spawnParticle(Particle.BLOCK, point, 5, 0.1f, 0.1f, 0.1f, 0.1f, Material.OAK_LEAVES.createBlockData());
 										le.getWorld().playSound(point, Sound.ENTITY_ARROW_HIT, 1, 0.6f);
 										le.getWorld().playSound(point, Sound.BLOCK_VINE_BREAK, 1, 1);
@@ -2738,8 +2736,8 @@ public class Spell {
 				Spell spell = this;
 
 				Collection<PotionEffect> effects = new ArrayList<PotionEffect>();
-				effects.add(new PotionEffect(PotionEffectType.NAUSEA, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+1), true, true));
-				effects.add(new PotionEffect(PotionEffectType.POISON, (int)Math.round(20*(1+lvl*0.8f)), (int)Math.round(lvl+1), true, true));
+				effects.add(new PotionEffect(PotionEffectType.NAUSEA, (int)Math.round(30*(1+lvl*1.2f)), (int)Math.round(2*lvl), true, true));
+				effects.add(new PotionEffect(PotionEffectType.POISON, (int)Math.round(30*(1+lvl*1.2f)), (int)Math.round(2*lvl), true, true));
 				
 				for (int i = 0; i < (twinning ? 2 : 1); i++) {
 					float rightOffset = twinning ? 2*i-1 : 0;
@@ -2795,7 +2793,7 @@ public class Spell {
 							if (c < 5 + 5*lvl) {
 								if (true) {
 									le.getWorld().playSound(le, Sound.ENTITY_CAT_HISS, 1, 1.8f);
-									Vector vel = le.getEyeLocation().getDirection().add(new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5)).normalize().multiply(0.7f + lvl*0.3f);
+									Vector vel = le.getEyeLocation().getDirection().add(new Vector(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).multiply(0.8f)).normalize().multiply(0.7f + lvl*0.3f);
 									FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(10, 100, 20), 1.6f));
 									float range = (10+lvl*3)*rangeMod;
 									Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
@@ -2806,7 +2804,7 @@ public class Spell {
 												return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.9, false, false, 
 														(point, entity) -> {
 															//entity.damage(5+lvl, le);
-															entity.damage(1.5f+lvl*0.5f, source);
+															entity.damage(4.5f+lvl*1.8f, source);
 															entity.addPotionEffects(effects);
 															le.getWorld().playSound(point, Sound.ENTITY_SPIDER_HURT, 1, 1.5f);
 															le.getWorld().spawnParticle(Particle.POOF, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
@@ -2838,7 +2836,7 @@ public class Spell {
 				success = true;
 				cooldown = 40;
 				Vector offset = new Vector(0, -0.6f, 0);
-				Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
+				//Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection());
 				Quaternionf rot = new Quaternionf().rotateX((float) Math.toRadians(0)) // rotate 90° on X axis
 				.rotateZ((float) Math.toRadians(0)); // then 45° on Y axis
 
@@ -2863,7 +2861,7 @@ public class Spell {
 					meta.setItemModel(NamespacedKey.fromString("fsp:snow_barrage_squares"));
 					d2.setItemMeta(meta);
 					
-					ItemDisplay display = eyeloc.getWorld().spawn(eyeloc,
+					ItemDisplay display = le.getWorld().spawn(le.getLocation().setDirection(new Vector(0, -1, 0)),
 							ItemDisplay.class, entity -> {
 								// customize the entity!
 								entity.setItemStack(d1);
@@ -2873,7 +2871,7 @@ public class Spell {
 			
 							});
 					
-					ItemDisplay display2 = eyeloc.getWorld().spawn(eyeloc,
+					ItemDisplay display2 = le.getWorld().spawn(le.getLocation().setDirection(new Vector(0, -1, 0)),
 							ItemDisplay.class, entity -> {
 								// customize the entity!
 								entity.setItemStack(d2);
@@ -2911,7 +2909,7 @@ public class Spell {
 									double distance = ground.distanceSquared(loc);
 									if (distance < Math.pow(1+lvl, 2)) {
 										le.removePotionEffect(PotionEffectType.SLOW_FALLING);
-										le.addPotionEffects(new ArrayList<PotionEffect>() {{add(new PotionEffect(PotionEffectType.LEVITATION, 2000, 0, true, false));}});
+										le.addPotionEffects(new ArrayList<PotionEffect>() {{add(new PotionEffect(PotionEffectType.LEVITATION, 2000, (int)(lvl-1), true, false));}});
 									} else {
 										le.removePotionEffect(PotionEffectType.LEVITATION);
 										le.addPotionEffects(new ArrayList<PotionEffect>() {{add(new PotionEffect(PotionEffectType.SLOW_FALLING, 2000, 0, true, false));}});
@@ -2956,15 +2954,15 @@ public class Spell {
 				float spreadX = 0.5f;
 				float spreadY = 0.3f;
 				for (int i = 0; i < blasts; i++) {
-					Vector ivel = vel.clone().add(right.clone().multiply(Math.cos((i-1) * 2.0*Math.PI / (blasts-1)) * spreadX).add(up.clone().multiply(Math.sin((i-1) * 2.0*Math.PI / (blasts-1)) * spreadY)));
+					Vector ivel = i == 0 ? vel.clone() : vel.clone().add(right.clone().multiply(Math.cos((i-1) * 2.0*Math.PI / (blasts-1)) * spreadX).add(up.clone().multiply(Math.sin((i-1) * 2.0*Math.PI / (blasts-1)) * spreadY)));
 					//Vector ivel = le.getEyeLocation().getDirection().add(Vector.getRandom()).normalize().multiply(0.7f + lvl*(0.2f));
 					SpellManager.addSpell(this, le, le.getEyeLocation().add(ivel), item, rangeMod, cooldownMod, potencyMod, 
 							(loc, tick) -> {
-								return laserTick(nearbyEntities, tick, le, loc, ivel, particle, range, false, 0.5, false, true, 
+								return laserTick(nearbyEntities, tick, le, loc, ivel, particle, range, false, 1.2f, false, true, 
 										(point, entity) -> {
 											//entity.damage(5+lvl, le);
-											entity.damage(3+lvl*1.2, source);
-											entity.setVelocity(entity.getVelocity().add(ivel.clone().add(new Vector(0, (ivel.getY() < 0 ? -ivel.getY() : 0)+0.5, 0)).multiply(0.6 + 0.1f * lvl)));
+											entity.damage(4.5+lvl*1.8, source);
+											entity.setVelocity(entity.getVelocity().add(ivel.clone().add(new Vector(0, (ivel.getY() < 0 ? -ivel.getY() : 0)+0.5, 0)).multiply(0.6 + 0.2f * lvl)));
 											le.getWorld().spawnParticle(Particle.GUST, point, 1, 0, 0, 0, 0);
 											le.getWorld().playSound(point, Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 1, 1.2f);
 											spellHit(spell, entity);
@@ -3079,7 +3077,7 @@ public class Spell {
 						if (((player != null && e instanceof Player) || (player == null && !(e instanceof Player)))) {
 							if (le instanceof Player p)
 								p.sendMessage(ChatColor.AQUA + "You recieved an elemental ward from " + le.getName());
-							SpellManager.elementalWard(le, 30*(4+(int)lvl));
+							SpellManager.elementalWard(le, 20*(3+(int)lvl));
 							le.addScoreboardTag("ElementalWard");
 						}
 					}
@@ -3101,7 +3099,7 @@ public class Spell {
 						if (((player != null && e instanceof Player) || (player == null && !(e instanceof Player)))) {
 							if (le instanceof Player p)
 								p.sendMessage(ChatColor.AQUA + "You recieved a primordial ward from " + le.getName());
-							SpellManager.elementalWard(le, 30*(4+(int)lvl));
+							SpellManager.elementalWard(le, 20*(3+(int)lvl));
 							le.addScoreboardTag("PrimordialWard");
 						}
 					}
@@ -3181,7 +3179,7 @@ public class Spell {
 									(point, entity) -> {
 										//entity.damage(5+lvl, le);
 										entity.addPotionEffects(effects);
-										entity.damage(3+lvl*1.2, source);
+										entity.damage(4+lvl*1.8, source);
 										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
 										le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
 										le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 0.6f);
@@ -3272,7 +3270,7 @@ public class Spell {
 							
 							if (c < duration) {
 								if (c % 3 == 0) {
-									le.getWorld().playSound(le, Sound.ENTITY_BLAZE_SHOOT, 1, 2);
+									le.getWorld().playSound(le, Sound.ENTITY_WITHER_SHOOT, 1, 2);
 									Vector vel = le.getEyeLocation().getDirection().multiply(0.7f + lvl*0.2f);
 									FancyParticle particle = new FancyParticle(Particle.DUST, 1, 0, 0, 0, 0, new DustOptions(Color.fromRGB(24, 30, 4), 0.9f));
 									float range = (20+lvl*4)*rangeMod;
@@ -3289,7 +3287,7 @@ public class Spell {
 														(point, entity) -> {
 															//entity.damage(5+lvl, le);
 															entity.addPotionEffects(effects);
-															entity.damage(2.8f+lvl*1.2f, source);
+															entity.damage(3.9f+lvl*1.8f, source);
 															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
 															le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
 															le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 0.6f);
@@ -3335,33 +3333,34 @@ public class Spell {
 						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
 						entity -> !entity.equals(le));
 				Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
-					add(new PotionEffect(PotionEffectType.POISON, (int)(20+20*lvl), (int)lvl));
-					add(new PotionEffect(PotionEffectType.NAUSEA, (int)(20+15*lvl), (int)lvl));
+					add(new PotionEffect(PotionEffectType.POISON, (int)(30+25*lvl), (int)(2*lvl)));
+					add(new PotionEffect(PotionEffectType.NAUSEA, (int)(20+15*lvl), (int)(2*lvl)));
 					}};
 				
 				int radius = (int)Math.round(3 + lvl);
 				int duration = (int)(100 + 40*lvl);
 					
 				Consumer<Location> spawnCloud = (loc) -> {
-					SpellManager.addSpell(this, le, loc, item, rangeMod, cooldownMod, potencyMod, (point, tick) -> {
-						loc.getWorld().spawnParticle(Particle.DUST, loc, 100, radius, radius, radius, 0.1f, new DustOptions(Color.GREEN, 2));
-						
-						if (tick % 20 == 0) {
-							Collection<LivingEntity> entities = le.getWorld().getNearbyLivingEntities(loc, radius, radius, radius);
-							for (LivingEntity entity : entities) {
-								if (entity.getEyeLocation().distance(loc) < radius) {
-									entity.addPotionEffects(effects);
+					Bukkit.getScheduler().runTaskLater(FancyMagic.plugin, () -> {
+						SpellManager.addSpell(this, le, loc, item, rangeMod, cooldownMod, potencyMod, (point, tick) -> {
+							loc.getWorld().spawnParticle(Particle.DUST, loc, 100, radius/2, radius/2, radius/2, 0.1f, new DustOptions(Color.GREEN, 2));
+							
+							if (tick % 20 == 0) {
+								Collection<LivingEntity> entities = le.getWorld().getNearbyLivingEntities(loc, radius, radius, radius);
+								for (LivingEntity entity : entities) {
+									if (entity.getEyeLocation().distance(loc) < radius) {
+										entity.addPotionEffects(effects);
+									}
 								}
 							}
-						}
-						
-						if (tick >= duration) {
-							return false;
-						} else {
-							return true;
-						}
-					});
-					
+							
+							if (tick >= duration) {
+								return false;
+							} else {
+								return true;
+							}
+						});
+					}, 10);
 				};
 					
 				SpellManager.addSpell(this, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
@@ -3370,7 +3369,7 @@ public class Spell {
 									(point, entity) -> {
 										//entity.damage(5+lvl, le);
 										entity.addPotionEffects(effects);
-										entity.damage(2+lvl*1.2, source);
+										entity.damage(3+lvl*1.6, source);
 										//entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
 										//le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
 										le.getWorld().playSound(point, Sound.ENTITY_CAT_HISS, 1, 0.6f);
@@ -3867,7 +3866,9 @@ public class Spell {
 
 		for (int i = 0; i < target.length() / inc; i++) {
 			Block block = result.getBlock();
-			if ((block.isLiquid() || !block.isPassable()) && block.getBoundingBox().contains(result.toVector())) {
+			if (block.isLiquid())
+				return block.getLocation();
+			if (!block.isPassable() && block.getBoundingBox().contains(result.toVector())) {
 				return getClosestPoint(loc.toVector(), block.getBoundingBox()).toLocation(loc.getWorld())
 						.subtract(target.clone().normalize().multiply(0.5f));
 			}
