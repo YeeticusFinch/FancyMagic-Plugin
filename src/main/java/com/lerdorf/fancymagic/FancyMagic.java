@@ -19,6 +19,7 @@ import java.io.FileWriter;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -262,6 +263,22 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 		
 	}
 
+	@Override
+	public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+		if (command.getName().equalsIgnoreCase("magic")) {
+			List<String> spellNames = new ArrayList<String>();
+			for (SpellType spellType : Spell.spellTypes) {
+				spellNames.add(spellType.name.replace(' ', '_').toLowerCase());
+			}
+			return filterPrefix(spellNames, args[0]);
+		}
+		return Collections.emptyList();
+	}
+	
+	private List<String> filterPrefix(List<String> options, String prefix) {
+		return options.stream().filter(opt -> opt.toLowerCase().startsWith(prefix.toLowerCase())).sorted().toList();
+	}
+	
 	@Override
 	public void onDisable() {
 		getLogger().info("FancyMagic disabled!");
