@@ -851,7 +851,7 @@ public class Spell {
 									(point, entity) -> {
 										//entity.damage(5+lvl, le);
 										entity.damage(4+lvl*1.7, source);
-										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).normalize().multiply(0.6)));
 										entity.setFireTicks((int)(5+lvl*5));
 										setOnFire(point.getBlock());
 										setOnFire(point.add(0, -1, 0).getBlock());
@@ -959,7 +959,7 @@ public class Spell {
 												return laserTick(nearbyEntities, tick, le, loc, vel.clone(), particle, range, false, 0.5, false, false, 
 														(point, entity) -> {
 															entity.damage(3.5+lvl*1.7, source);
-															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.3)));
+															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).normalize().multiply(0.3)));
 															entity.setFireTicks((int)(5+lvl*5));
 															setOnFire(point.getBlock());
 															setOnFire(point.add(0, -1, 0).getBlock());
@@ -1364,7 +1364,7 @@ public class Spell {
 															//entity.damage(5+lvl, le);
 															entity.damage(2+lvl*1.5f, source);
 															entity.setFreezeTicks((int)Math.round(30*(1+lvl)));
-															entity.setVelocity(entity.getVelocity().multiply(1/(1+lvl*0.5f)));
+															entity.setVelocity(entity.getVelocity().multiply(0.4));
 															entity.addPotionEffects(effects);
 															le.getWorld().playSound(point, Sound.BLOCK_POWDER_SNOW_BREAK, 1, 1f);
 															spellHit(spell, entity);
@@ -1563,7 +1563,7 @@ public class Spell {
 									(point, entity) -> {
 										//entity.damage(5+lvl, le);
 										entity.damage(5+lvl*1.9, source);
-										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.8)));
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).normalize().multiply(0.8)));
 										le.getWorld().playSound(point, Sound.BLOCK_GLASS_BREAK, 1, 2f);
 										spellHit(spell, entity);
 									},
@@ -1674,7 +1674,7 @@ public class Spell {
 														(point, entity) -> {
 															//entity.damage(5+lvl, le);
 															entity.damage(4.5+lvl*1.9, source);
-															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.8)));
+															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).normalize().multiply(0.8)));
 															le.getWorld().playSound(point, Sound.BLOCK_GLASS_BREAK, 1, 2f);
 															spellHit(spell, entity);
 														},
@@ -1771,8 +1771,8 @@ public class Spell {
 		        
 		        float range = 5*rangeMod;
 		        
-		        int numZombies = (int)Math.round(0.2f+lvl*1.4f+Math.random()*2);
-		        int numSkeletons = (int)Math.round(0.1f+lvl*1.1f+Math.random()*2);
+		        int numZombies = (int)Math.round(0.2f+lvl*1.2f+Math.random()*2);
+		        int numSkeletons = (int)Math.round(0.1f+lvl*0.9f+Math.random()*2);
 		        int numWitherSkeletons = (int)Math.round(lvl-2+Math.random()*2);
 		        int numSkeletonJockeys = (int)Math.round(lvl-2+Math.random()*2);
 		        
@@ -1788,7 +1788,7 @@ public class Spell {
 		        for (int i = 0; i < numZombies; i++) {
 		        	Location spawnLoc = Util.getSafeTeleport(eyeLoc.add((new Vector(Math.random()-0.5, 0, Math.random()-0.5)).multiply(range)), range*0.75f);
 		            Zombie z = (Zombie) eyeLoc.getWorld().spawnEntity(spawnLoc, EntityType.ZOMBIE);
-		            if (Math.random() < lvl*0.2) setupEquipment(z, lvl+(float)Math.random()-0.5f);
+		            if (Math.random() < lvl*0.2) setupEquipment(z, Math.clamp(lvl+(float)(1.5*Math.random()-0.75f), 0, 5.5f));
 		            setupMinion(z, le);
 		            summoned.add(z);
 		        }
@@ -2259,7 +2259,7 @@ public class Spell {
 				} else
 					swapHelmet = false;
 				
-				int duration = (int)(1200 + 900 * lvl);
+				int duration = (int)(1800 + 1200 * lvl);
 				
 				if (success) {
 					
@@ -2510,7 +2510,7 @@ public class Spell {
 						if (e.getLocation().distance(loc) < explodeRange) {
 							e.addPotionEffects(effects);
 							e.damage(6+lvl*1.9f, source);
-							e.setVelocity(e.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));	
+							e.setVelocity(e.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).normalize().multiply(0.6)));	
 							spellHit(spell, e);
 						}
 					}
@@ -2527,7 +2527,7 @@ public class Spell {
 										//entity.damage(5+lvl, le);
 										entity.addPotionEffects(effects);
 										entity.damage(7+lvl*2.4, source);
-										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).normalize().multiply(0.6)));
 										
 										le.getWorld().playSound(point, Sound.ENTITY_GENERIC_EXPLODE, 1, 1.9f);
 										spellHit(spell, entity);
@@ -2559,12 +2559,12 @@ public class Spell {
 				Spell spell = this;
 
 				Collection<PotionEffect> effects = new ArrayList<PotionEffect>();
-				effects.add(new PotionEffect(PotionEffectType.SLOWNESS, (int)Math.round(30*(1+lvl*1.8f)), (int)Math.round(lvl+5), true, true));
-				effects.add(new PotionEffect(PotionEffectType.MINING_FATIGUE, (int)Math.round(30*(1+lvl*1.8f)), (int)Math.round(lvl+5), true, true));
-				effects.add(new PotionEffect(PotionEffectType.WEAKNESS, (int)Math.round(30*(1+lvl*1.8f)), (int)Math.round(lvl+2), true, true));
-				effects.add(new PotionEffect(PotionEffectType.BLINDNESS, (int)Math.round(30*(1+lvl*1.6f)), (int)Math.round(lvl+1), true, true));
-				effects.add(new PotionEffect(PotionEffectType.DARKNESS, (int)Math.round(30*(1+lvl*1.6f)), (int)Math.round(lvl+1), true, true));
-				effects.add(new PotionEffect(PotionEffectType.WITHER, (int)Math.round(30*(1+lvl*1.6f)), (int)Math.round(lvl), true, true));
+				effects.add(new PotionEffect(PotionEffectType.SLOWNESS, (int)Math.round(20*(1+lvl*1.8f)), (int)Math.round(lvl+5), true, true));
+				effects.add(new PotionEffect(PotionEffectType.MINING_FATIGUE, (int)Math.round(20*(1+lvl*1.8f)), (int)Math.round(lvl+5), true, true));
+				effects.add(new PotionEffect(PotionEffectType.WEAKNESS, (int)Math.round(20*(1+lvl*1.8f)), (int)Math.round(lvl+2), true, true));
+				effects.add(new PotionEffect(PotionEffectType.BLINDNESS, (int)Math.round(20*(1+lvl*1.6f)), (int)Math.round(lvl+1), true, true));
+				effects.add(new PotionEffect(PotionEffectType.DARKNESS, (int)Math.round(20*(1+lvl*1.6f)), (int)Math.round(lvl+1), true, true));
+				effects.add(new PotionEffect(PotionEffectType.WITHER, (int)Math.round(20*(1+lvl*1.6f)), (int)Math.round(lvl), true, true));
 
 				for (int i = 0; i < (twinning ? 2 : 1); i++) {
 					float rightOffset = twinning ? 2*i-1 : 0;
@@ -2632,7 +2632,7 @@ public class Spell {
 												return laserTick(nearbyEntities, tick, le, loc, vel, particle, range, false, 0.5, false, false, 
 														(point, entity) -> {
 															//entity.damage(5+lvl, le);
-															entity.damage(3+lvl*1.2f, source);
+															entity.damage(2+lvl*0.4f, source);
 															//entity.setFreezeTicks((int)Math.round(25*(1+lvl)));
 															entity.setVelocity(entity.getVelocity().multiply(1/(1+lvl*0.5f)));
 															entity.addPotionEffects(effects);
@@ -3172,6 +3172,7 @@ public class Spell {
 				Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
 					add(new PotionEffect(PotionEffectType.HUNGER, (int)(20+20*lvl), (int)lvl));
 					add(new PotionEffect(PotionEffectType.WEAKNESS, (int)(20+15*lvl), (int)lvl));
+					add(new PotionEffect(PotionEffectType.WITHER, (int)(10+10*lvl), (int)((lvl-1)*0.5)));
 					}};
 				SpellManager.addSpell(this, le, le.getEyeLocation().add(le.getEyeLocation().getDirection()), item, rangeMod, cooldownMod, potencyMod, 
 						(loc, tick) -> {
@@ -3180,7 +3181,7 @@ public class Spell {
 										//entity.damage(5+lvl, le);
 										entity.addPotionEffects(effects);
 										entity.damage(4+lvl*1.8, source);
-										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+										entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).normalize().multiply(0.6)));
 										le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
 										le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 0.6f);
 										spellHit(spell, entity);
@@ -3214,6 +3215,7 @@ public class Spell {
 				Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
 					add(new PotionEffect(PotionEffectType.HUNGER, (int)(20+20*lvl), (int)lvl));
 					add(new PotionEffect(PotionEffectType.WEAKNESS, (int)(20+15*lvl), (int)lvl));
+					add(new PotionEffect(PotionEffectType.WITHER, (int)(10+10*lvl), (int)((lvl-1)*0.5)));
 					}};
 
 				for (int i = 0; i < (twinning ? 2 : 1); i++) {
@@ -3288,7 +3290,7 @@ public class Spell {
 															//entity.damage(5+lvl, le);
 															entity.addPotionEffects(effects);
 															entity.damage(3.9f+lvl*1.8f, source);
-															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.6)));
+															entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).normalize().multiply(0.6)));
 															le.getWorld().spawnParticle(Particle.SOUL, point, 5, 0.1f, 0.1f, 0.1f, 0.1f);
 															le.getWorld().playSound(point, Sound.BLOCK_FIRE_EXTINGUISH, 1, 0.6f);
 															spellHit(spell, entity);

@@ -273,7 +273,6 @@ public class Items {
 		}, new Triple<>("Ring", 0.9f, 0.8f));
 	}};
 	
-
 	public static final void registerRecipes() {
 		for (Material base : focusBases.keySet()) {
 			for (Material core : focusCores.keySet()) {

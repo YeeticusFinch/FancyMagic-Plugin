@@ -71,6 +71,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -79,9 +80,11 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.world.LootGenerateEvent;
 import org.bukkit.inventory.CraftingInventory;
+import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
@@ -287,6 +290,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent event) {
 		event.getPlayer().discoverRecipes(recipes);
+		 cleanupMageArmor(event.getPlayer());
 	}
 
     private void registerRecipes() {
@@ -310,6 +314,19 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
         
     }
     
+    /**
+     * Utility to strip mage armor from a LivingEntity.
+     */
+    private void cleanupMageArmor(LivingEntity le) {
+        EntityEquipment eq = le.getEquipment();
+        if (eq == null) return;
+
+        if (Util.modelContains(eq.getHelmet(), "mage")) eq.setHelmet(null);
+        if (Util.modelContains(eq.getChestplate(), "mage")) eq.setChestplate(null);
+        if (Util.modelContains(eq.getLeggings(), "mage")) eq.setLeggings(null);
+        if (Util.modelContains(eq.getBoots(), "mage")) eq.setBoots(null);
+    }
+    
     public boolean isFocus(ItemStack item) {
     	if (item == null) return false;
     	ItemMeta meta = item.getItemMeta();
@@ -326,7 +343,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
     		ItemMeta meta = item.getItemMeta();
     		if (isFocus(item)) {
     			if (player.getEquipment().getItemInOffHand() != null && player.getEquipment().getItemInOffHand().getItemMeta() != null && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().has(new NamespacedKey(FancyMagic.plugin, "spellbook")) && player.getEquipment().getItemInOffHand().getItemMeta().getPersistentDataContainer().get(new NamespacedKey(FancyMagic.plugin, "spellbook"), PersistentDataType.INTEGER) > 0) {
-    				if (clicks.containsKey(player) && System.currentTimeMillis() - lastClick.get(player) <= 5) {
+    				if (clicks.containsKey(player) && System.currentTimeMillis() - lastClick.get(player) <= 90) {
         				// Clicked too fast, probably the same click
     					lastClick.put(player, System.currentTimeMillis());
     					return true;
@@ -523,6 +540,10 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
 		    		return;
 		    	}
     		}
+    	}
+    	if (event.getEntityType() != EntityType.PLAYER && event.getDamageSource().getDamageType() == DamageType.MAGIC && event.getDamageSource().getCausingEntity() == event.getEntity()) {
+    		event.setCancelled(true);
+    		return;
     	}
     	if (event.getEntity() instanceof Interaction interaction && interaction.getScoreboardTags().contains("shield")) {
     		interaction.addScoreboardTag("hit");
@@ -1046,6 +1067,18 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
                 }
             }
         }
+    }
+    
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        cleanupMageArmor(event.getPlayer());
+    }
+    
+    @EventHandler
+    public void onDeath(PlayerDeathEvent event) {
+        cleanupMageArmor(event.getEntity());
+        // Prevent mage armor from dropping
+        event.getDrops().removeIf(item -> Util.modelContains(item, "mage"));
     }
 
     @EventHandler
