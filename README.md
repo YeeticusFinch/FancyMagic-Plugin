@@ -1,6 +1,6 @@
 # FancyMagic-Plugin
 
-https://www.youtube.com/watch?v=CbrepkHcNG4
+[![FancyMagic Showcase Video](https://img.youtube.com/vi/CbrepkHcNG4/0.jpg)](https://www.youtube.com/watch?v=CbrepkHcNG4)
 
 Adds vanilla-friendly magical spells to the game. 
 
