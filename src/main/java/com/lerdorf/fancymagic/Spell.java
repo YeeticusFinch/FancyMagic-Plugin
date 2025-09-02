@@ -2663,14 +2663,36 @@ public class Spell {
 			}
 			case "Wind Burst":
 				{
-					WindCharge fb = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation().getDirection().multiply(0.5f)), WindCharge.class);
-					fb.setMetadata("Power", new FixedMetadataValue(FancyMagic.plugin, 5 + 4*lvl));
-					fb.setShooter(le);
-					float speed = 2f + 0.5f*lvl;
-					float range = (10 * 6*lvl) * rangeMod;
-					fb.setVelocity(le.getEyeLocation().getDirection().multiply(speed));
-					
-					EntityKiller k = new EntityKiller(fb, (int)(range/speed));
+					if (twinning) {
+						Vector right = le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(0.5f);
+						
+						WindCharge fb = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation().getDirection().multiply(0.5f)).add(right), WindCharge.class);
+						fb.setMetadata("Power", new FixedMetadataValue(FancyMagic.plugin, 5 + 4*lvl));
+						fb.setShooter(le);
+						float speed = 2f + 0.5f*lvl;
+						float range = (10 * 6*lvl) * rangeMod;
+						fb.setVelocity(le.getEyeLocation().getDirection().multiply(speed));
+						
+						EntityKiller k = new EntityKiller(fb, (int)(range/speed));
+						
+						WindCharge fb2 = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation().getDirection().multiply(0.5f)).subtract(right), WindCharge.class);
+						fb2.setMetadata("Power", new FixedMetadataValue(FancyMagic.plugin, 5 + 4*lvl));
+						fb2.setShooter(le);
+						speed = 2f + 0.5f*lvl;
+						range = (10 * 6*lvl) * rangeMod;
+						fb2.setVelocity(le.getEyeLocation().getDirection().multiply(speed));
+						
+						EntityKiller k2 = new EntityKiller(fb2, (int)(range/speed));
+					} else {
+						WindCharge fb = le.getWorld().spawn(le.getEyeLocation().add(le.getEyeLocation().getDirection().multiply(0.5f)), WindCharge.class);
+						fb.setMetadata("Power", new FixedMetadataValue(FancyMagic.plugin, 5 + 4*lvl));
+						fb.setShooter(le);
+						float speed = 2f + 0.5f*lvl;
+						float range = (10 * 6*lvl) * rangeMod;
+						fb.setVelocity(le.getEyeLocation().getDirection().multiply(speed));
+						
+						EntityKiller k = new EntityKiller(fb, (int)(range/speed));
+					}
 					break;
 				}
 			case "Thornwhip":
