@@ -683,6 +683,137 @@ public class Spell {
 			new Material[] {Material.ENDER_CHEST, Material.ENDER_EYE}, // inventory requirements
 			"Opens your enderchest."
 			);
+	public static final SpellType SONIC_SHRIEK = new SpellType(
+			"Sonic Shriek",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.ECHO_SHARD);
+				put('F', Material.MUSIC_DISC_5);
+				put('G', Material.SCULK_CATALYST);
+			}},
+			4,
+			null, // hotbar requirements
+			new Material[] {Material.SCULK_CATALYST, Material.SCULK_SHRIEKER, Material.SCULK_SENSOR, Material.SCULK, Material.SCULK_VEIN}, // inventory requirements
+			"Launches a sonic shriek."
+			);
+	public static final SpellType FEATHER_FALL = new SpellType(
+			"Feather Fall",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.AMETHYST_SHARD);
+				put('F', Material.FEATHER);
+				put('G', Material.DIAMOND);
+			}},
+			2,
+			null, // hotbar requirements
+			new Material[] {Material.FEATHER}, // inventory requirements
+			"Applies slow falling to you and all nearby creatures."
+			);
+	
+	public static final SpellType BOUNCE = new SpellType(
+			"Bounce",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.AMETHYST_SHARD);
+				put('F', Material.SLIME_BLOCK);
+				put('G', Material.DIAMOND);
+			}},
+			3,
+			null, // hotbar requirements
+			new Material[] {Material.SLIME_BALL, Material.SLIME_BLOCK, Material.MAGMA_CREAM}, // inventory requirements
+			"Lets you bounce on any block as if it were a slime block."
+			);
+	
+	public static final SpellType MAGNIFY_GRAVITY = new SpellType(
+			"Magnify Gravity",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.OBSIDIAN);
+				put('F', Material.SCULK_CATALYST);
+				put('G', Material.DIAMOND_BLOCK);
+			}},
+			4,
+			null, // hotbar requirements
+			new Material[] {Material.OBSIDIAN, Material.CRYING_OBSIDIAN}, // inventory requirements
+			"Magnifies gravity in a given area."
+			);
+	
+	public static final SpellType REVERSE_GRAVITY = new SpellType(
+			"Reverse Gravity",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.CRYING_OBSIDIAN);
+				put('F', Material.NETHER_STAR);
+				put('G', Material.DIAMOND_BLOCK);
+			}},
+			4,
+			null, // hotbar requirements
+			new Material[] {Material.OBSIDIAN, Material.CRYING_OBSIDIAN}, // inventory requirements
+			"Reverses gravity in a given area."
+			);
+
+	public static final SpellType GRAVITY_FISSURE = new SpellType(
+			"Gravity Fissure",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.OBSIDIAN);
+				put('F', Material.ANCIENT_DEBRIS);
+				put('G', Material.DIAMOND_BLOCK);
+			}},
+			5,
+			new Material[] {Material.OBSIDIAN, Material.CRYING_OBSIDIAN}, // hotbar requirements
+			null, // inventory requirements
+			"Manifests a ravine of gravitational energy."
+			);
+	
+	public static final SpellType DARK_STAR = new SpellType(
+			"Dark Star",
+			new String[] {
+					"PPP",
+					"CFG",
+					"PPP"
+			},
+			new HashMap<>() {{
+				put('P', Material.PAPER);
+				put('C', Material.NETHERITE_INGOT);
+				put('F', Material.NETHER_STAR);
+				put('G', Material.END_CRYSTAL);
+			}},
+			8,
+			new Material[] {Material.END_CRYSTAL, Material.NETHER_STAR}, // hotbar requirements
+			null, // inventory requirements
+			"Manifests a dark sphere of crushing gravitational force."
+			);
 	
 	// Spell.java
 	
@@ -3420,6 +3551,188 @@ public class Spell {
 					}
 					break;
 				}
+			case "Sonic Shriek":
+			{
+				success = true;
+				cooldown = 75 + (twinning ? 20 : 0);
+				Spell spell = this;
+				for (int i = 0; i < (twinning ? 2 : 1); i++) {
+					float rightOffset = twinning ? 2*i-1 : 0;
+					Vector right = twinning ? le.getEyeLocation().getDirection().crossProduct(new Vector(0, 1, 0)).normalize().multiply(rightOffset) : new Vector(0, 0, 0);
+					Location eyeloc = le.getEyeLocation().add(le.getEyeLocation().getDirection()).add(right);
+
+					le.getWorld().playSound(le, Sound.ENTITY_WARDEN_SONIC_BOOM, 1, 1.2f);
+					le.getWorld().playSound(le, Sound.ENTITY_WARDEN_SONIC_CHARGE, 1, 1.4f);
+					le.getWorld().playSound(le, Sound.ENTITY_WARDEN_DEATH, 1, 2f);
+					//Util.playCustomSound(net.kyori.adventure.sound.Sound.sound(Key.key("fsp:laser"), Source.HOSTILE, 1.0f, 1.0f), eyeloc);
+					Vector vel = le.getEyeLocation().getDirection().multiply(0.3);
+					FancyParticle particle = new FancyParticle(Particle.SONIC_BOOM, 1, 0, 0, 0, 0);
+					float range = (20+lvl*3)*rangeMod;
+					
+					le.getWorld().spawnParticle(Particle.FLASH, eyeloc, 1, 0, 0, 0, 0);
+					
+					Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+							le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+							entity -> !entity.equals(le));
+					
+					laserTick(nearbyEntities, 0, le, eyeloc, vel, particle, range, true, 0.4, true, true, 
+							(point, entity) -> {
+								//entity.damage(5+lvl, le);
+								//entity.addScoreboardTag("no_drops");
+								entity.damage(7+lvl*5, source);
+								point.getWorld().spawnParticle(Particle.FLASH, point, 5, 0, 0, 0, 0);
+								spellHit(spell, entity);
+								entity.setVelocity(entity.getVelocity().add(vel.clone().add(new Vector(0, (vel.getY() < 0 ? -vel.getY() : 0)+0.5, 0)).multiply(0.8)));
+								//entity.setFireTicks((int)(5+lvl*5));
+								le.getWorld().playSound(point, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1, 2f);
+							},
+							(point, block) -> {
+								//block.getWorld().spawnParticle(Particle.EXPLOSION, block.getLocation().add(0.5, 0.5, 0.5), 1, 0, 0, 0, 0);
+								//block.breakNaturally();
+								//le.getWorld().playSound(point, Sound.ENTITY_GENERIC_EXPLODE, 1, 1.4f);
+							}
+							);
+				}
+				break;
+			}
+			case "Feather Fall":
+			{
+				if (le instanceof Player player) {
+					float radius = 5 * rangeMod;
+					for (float i = 0; i < 2*Math.PI; i += 0.05) {
+						le.getWorld().spawnParticle(Particle.CLOUD, le.getLocation().add(new Vector(radius*Math.sin(i), 1, radius*Math.cos(i))), 1, 0, 0, 0, 0);
+					}
+					success = true;
+					cooldown = 80;
+					le.getWorld().playSound(le.getEyeLocation(), Sound.ENTITY_PHANTOM_SWOOP, 1, 0.6f);
+					Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
+						add(new PotionEffect(PotionEffectType.SLOW_FALLING, (int)(20*(10+(10*lvl))), 0, true, false));
+					}};
+					for (LivingEntity e : le.getWorld().getNearbyLivingEntities(le.getLocation(), radius, radius, radius)) {
+						if (((player != null && e instanceof Player) || (player == null && !(e instanceof Player)))) {
+							if (le instanceof Player p)
+								p.sendMessage(ChatColor.AQUA + "You recieved a Feather Fall spell from " + le.getName());
+							le.addPotionEffects(effects);
+							//SpellManager.elementalWard(le, 20*(3+(int)lvl));
+							//le.addScoreboardTag("ElementalWard");
+						}
+					}
+				}
+				break;
+			}
+			case "Bounce":
+			{
+				if (le instanceof Player player) {
+					float radius = 5 * rangeMod;
+					for (float i = 0; i < 2*Math.PI; i += 0.05) {
+						le.getWorld().spawnParticle(Particle.ITEM_SLIME, le.getLocation().add(new Vector(radius*Math.sin(i), 1, radius*Math.cos(i))), 1, 0, 0, 0, 0);
+					}
+					success = true;
+					cooldown = 90;
+					le.getWorld().playSound(le.getEyeLocation(), Sound.ENTITY_PHANTOM_SWOOP, 1, 0.6f);
+					for (LivingEntity e : le.getWorld().getNearbyLivingEntities(le.getLocation(), radius, radius, radius)) {
+						if (((player != null && e instanceof Player) || (player == null && !(e instanceof Player)))) {
+							if (le instanceof Player p)
+								p.sendMessage(ChatColor.AQUA + "You recieved a Bounce spell from " + le.getName());
+							SpellManager.bounce(le, 20*(3+(int)lvl));
+							le.addScoreboardTag("Bounce");
+						}
+					}
+				}
+				break;
+			}
+			case "Magnify Gravity":
+			{
+				break;
+			}
+			case "Reverse Gravity":
+			{
+				break;
+			}
+			case "Gravity Fissure":
+			{
+				break;
+			}
+			case "Dark Star":
+			{
+				// Big dark sphere that is difficult terrain with crushing gravitational force and magical darkness
+				Spell spell = this;
+				Location eyeloc = le.getEyeLocation();
+				Vector vel = eyeloc.getDirection().multiply(0.5f);
+				
+				float range = (40 + 10 * lvl)*rangeMod;
+				
+				final Consumer<Location> darkStar = (loc) -> {
+					ItemStack d1 = new ItemStack(Material.INK_SAC);
+					ItemMeta meta = d1.getItemMeta();
+					meta.setItemModel(NamespacedKey.fromString("fsp:dark_star"));
+					d1.setItemMeta(meta);
+					
+					loc.setRotation(20, 20);
+					
+					int duration = (int)(40 + 30*lvl);
+					
+					Vector3f scale = new Vector3f(10, 10, 10);
+					
+					ItemDisplay display = loc.getWorld().spawn(loc,
+							ItemDisplay.class, entity -> {
+								// customize the entity!
+								entity.setItemStack(d1);
+								entity.setTransformation(
+										new Transformation(new Vector3f(), new AxisAngle4f(), scale, new AxisAngle4f()));
+								entity.setItemDisplayTransform(ItemDisplayTransform.HEAD);
+			
+							});
+				
+				
+					new BukkitRunnable() {
+						int c = 0;
+
+						@Override
+						public void run() {
+							Quaternionf rot = new Quaternionf().rotateY((float) Math.toRadians(10*c)); // then 45° on Y axis
+							AxisAngle4f axisAngle = new AxisAngle4f().set(rot);
+							
+							display.teleport(loc);
+							display.setTransformation(new Transformation(new Vector3f(), axisAngle, scale, new AxisAngle4f()));
+
+							if (c < duration) {
+								
+							} else {
+								display.remove();
+								cancel();
+								return;
+							}
+							
+							c++;
+						}
+						
+					}.runTaskTimer(FancyMagic.plugin, 0L, 1L);
+				};
+				
+				Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+						le.getLocation().add(vel.clone().normalize().multiply(range / 2)), range / 2, range / 2, range / 2,
+						entity -> !entity.equals(le));
+				
+				laserTick(nearbyEntities, 0, le, eyeloc, vel, new FancyParticle(Particle.LAVA, 1, 0, 0, 0, 0), range, true, 0.5, false, false, 
+						(point, entity) -> {
+							//entity.damage(5+lvl, le);
+							//entity.addScoreboardTag("no_drops");
+							
+							spellHit(spell, entity);
+							darkStar.accept(point);
+						},
+						(point, block) -> {
+							//block.getWorld().spawnParticle(Particle.EXPLOSION, block.getLocation().add(0.5, 0.5, 0.5), 1, 0, 0, 0, 0);
+							//block.breakNaturally();
+							//le.getWorld().playSound(point, Sound.ENTITY_GENERIC_EXPLODE, 1, 1.4f);
+							darkStar.accept(point);
+						}
+						);
+				
+				
+				break;
+			}
 		}
 		
 		if (success) {

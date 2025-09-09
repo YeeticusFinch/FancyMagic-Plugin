@@ -484,7 +484,7 @@ public class FancyMagic extends JavaPlugin implements Listener, TabExecutor {
             //windburst(event.getHitBlock() != null ? event.getHitBlock() : event.getEntity().getLocation().getBlock(), 3);
             Location loc = event.getEntity().getLocation();
             if (event.getEntity().hasMetadata("Power")) {
-            	float power = (int) event.getEntity().getMetadata("Power").get(0).value();
+            	float power = (float) event.getEntity().getMetadata("Power").get(0).value();
             	List<Entity> nearbyEntities = event.getEntity().getNearbyEntities(3, 3, 3);
                 
                 for (Entity entity : nearbyEntities) {

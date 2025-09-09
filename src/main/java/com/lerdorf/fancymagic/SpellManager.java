@@ -30,6 +30,7 @@ public class SpellManager {
     public static HashMap<Player, PlayerState[]> playerStates = new HashMap<>();
     private static HashMap<LivingEntity, Integer> elementalWard = new HashMap<>();
     private static HashMap<LivingEntity, Integer> primordialWard = new HashMap<>();
+    private static HashMap<LivingEntity, Integer> bounce = new HashMap<>();
     static ArrayList<Player> wallRunning = new ArrayList<>();
     public static ArrayList<Player> wallRun = new ArrayList<>();
    
@@ -58,6 +59,55 @@ public class SpellManager {
 				  			}
 				  		}
 				  	}
+            		
+            		if (bounce.size() > 0) {
+	            		Iterator<Map.Entry<LivingEntity, Integer>> it4 = bounce.entrySet().iterator();
+	            		while (it4.hasNext()) {
+	            		    var entry = it4.next();
+	            		    LivingEntity le = entry.getKey();
+	            		    int newTime = entry.getValue() - 1;
+	            		    entry.setValue(newTime);
+	            		    
+	            		    if (le.isOnGround()) {
+	            		    	if (le.getScoreboardTags().contains("fsp_falling")) {
+	            		    		le.removeScoreboardTag("fsp_falling");
+	            		    		for (String tag : le.getScoreboardTags()) {
+	            		    			if (tag.contains("yvel:")) {
+	            		    				double yvel = Double.parseDouble(tag.substring(tag.indexOf(':')+1));
+	            		    				le.setVelocity(le.getVelocity().setY(Math.abs(yvel*0.95f)));
+	            		    				le.getScoreboardTags().remove(tag);
+	            		    				break;
+	            		    			}
+	            		    		}
+	            		    	}
+	            		    	if (!le.getScoreboardTags().contains("fsp_ground")) {
+	            		    		le.addScoreboardTag("fsp_ground");
+	            		    	}
+	            		    } else {
+	            		    	if (le.getScoreboardTags().contains("fsp_ground")) {
+	            		    		le.removeScoreboardTag("fsp_ground");
+	            		    	}
+	            		    	if (!le.getScoreboardTags().contains("fsp_falling")) {
+	            		    		le.addScoreboardTag("fsp_falling");
+	            		    	}
+	            		    	for (String tag : le.getScoreboardTags()) {
+            		    			if (tag.contains("yvel:")) {
+            		    				//double yvel = Double.parseDouble(tag.substring(tag.indexOf(':')+1));
+            		    				//le.setVelocity(le.getVelocity().setY(Math.abs(yvel*0.95f)));
+            		    				le.getScoreboardTags().remove(tag);
+            		    				break;
+            		    			}
+            		    		}
+	            		    	le.addScoreboardTag("yvel:"+le.getVelocity().getY());
+	            		    }
+	            		    
+	            		    //entry.getKey().accept(newTime);
+	            		    if (newTime < 0) {
+	            		    	
+	            		        it4.remove();
+	            		    }
+	            		}
+            		}
             		
             		// Player states for chronal shift
             		if (c % 20 == 0) {
@@ -163,6 +213,7 @@ public class SpellManager {
                 		        it3.remove();
                 		    }
             			}
+            			
 					}
             		
             		Iterator<Map.Entry<Consumer<Integer>, Integer>> it = persistantCalls.entrySet().iterator();
@@ -185,7 +236,7 @@ public class SpellManager {
                 }
                 
                 // Stop loop when no active spells
-                if (activeSpells.isEmpty() && EntityKiller.killers.isEmpty() && persistantCalls.isEmpty() && playerStates.isEmpty() && elementalWard.isEmpty() && primordialWard.isEmpty() && wallRunning.isEmpty()) {
+                if (activeSpells.isEmpty() && EntityKiller.killers.isEmpty() && persistantCalls.isEmpty() && playerStates.isEmpty() && elementalWard.isEmpty() && primordialWard.isEmpty() && wallRunning.isEmpty() && bounce.isEmpty()) {
                     cancel();
                     mainLoop = null;
                 }
@@ -273,7 +324,12 @@ public class SpellManager {
     		return spellTick.apply(location, tick);
     	}
     }
-
+    public static void bounce(LivingEntity le, int ticks) {
+		bounce.put(le, ticks);
+		if (mainLoop == null) {
+            startMainLoop();
+        }
+	}
 	public static void elementalWard(LivingEntity le, int i) {
 		elementalWard.put(le, i);
 		if (mainLoop == null) {
