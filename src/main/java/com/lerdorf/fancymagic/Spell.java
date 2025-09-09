@@ -3660,6 +3660,12 @@ public class Spell {
 				Location eyeloc = le.getEyeLocation();
 				Vector vel = eyeloc.getDirection().multiply(0.5f);
 				
+				Collection<PotionEffect> effects = new ArrayList<PotionEffect>() {{
+					add(new PotionEffect(PotionEffectType.SLOWNESS, 40, (int)(lvl/2), true, false));
+					add(new PotionEffect(PotionEffectType.BLINDNESS, 40, (int)(lvl/2), true, false));
+					add(new PotionEffect(PotionEffectType.DARKNESS, 40, (int)(lvl/2), true, false));
+				}};
+				
 				float range = (40 + 10 * lvl)*rangeMod;
 				
 				final Consumer<Location> darkStar = (loc) -> {
@@ -3672,7 +3678,7 @@ public class Spell {
 					
 					int duration = (int)(40 + 30*lvl);
 					
-					Vector3f scale = new Vector3f(10, 10, 10);
+					Vector3f scale = new Vector3f(3+lvl/3, 3+lvl/3, 3+lvl/3);
 					
 					ItemDisplay display = loc.getWorld().spawn(loc,
 							ItemDisplay.class, entity -> {
@@ -3697,7 +3703,17 @@ public class Spell {
 							display.setTransformation(new Transformation(new Vector3f(), axisAngle, scale, new AxisAngle4f()));
 
 							if (c < duration) {
-								
+								if (c % 10 == 0) {
+									Collection<LivingEntity> nearbyEntities = le.getWorld().getNearbyLivingEntities(
+											loc, scale.x*2, scale.y*2, scale.z *2);
+									for (LivingEntity le : nearbyEntities) {
+										le.setVelocity(le.getVelocity().add(loc.clone().subtract(le.getLocation()).toVector().normalize().multiply(1.1f)));
+										if (le.getLocation().distanceSquared(loc) < scale.x) {
+											le.damage(4+lvl, source);
+											le.addPotionEffects(effects);
+										}
+									}
+								}
 							} else {
 								display.remove();
 								cancel();
